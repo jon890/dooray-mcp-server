@@ -23,6 +23,13 @@ class DoorayHttpClientIntegrationTest {
 
     @BeforeAll
     fun setup() {
+        // CI 환경에서는 통합 테스트 건너뛰기
+        if (System.getenv("CI") == "true") {
+            println("🔧 CI 환경에서 실행 중: 통합 테스트를 건너뜁니다 (IP 제한으로 인한 제외)")
+            hasRequiredEnv = false
+            return
+        }
+
         env = parseEnv()
 
         val baseUrl = env["DOORAY_BASE_URL"]

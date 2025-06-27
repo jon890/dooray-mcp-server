@@ -35,6 +35,16 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    
+    // CI 환경에서는 통합 테스트 제외
+    if (System.getenv("CI") == "true") {
+        exclude("**/*IntegrationTest*")
+        systemProperty("skipIntegrationTests", "true")
+        
+        doFirst {
+            println("🔧 CI 환경에서 실행 중: 통합 테스트를 제외합니다")
+        }
+    }
 }
 
 kotlin {

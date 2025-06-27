@@ -41,11 +41,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run tests
+      - name: Run tests (excluding integration tests in CI)
         env:
-          DOORAY_API_KEY: ${{ secrets.DOORAY_API_KEY }}
-          DOORAY_BASE_URL: ${{ secrets.DOORAY_BASE_URL }}
-          DOORAY_PROJECT_ID: ${{ secrets.DOORAY_PROJECT_ID }}
+          CI: true
         run: ./gradlew test --info --stacktrace
 
       - name: Upload test reports
