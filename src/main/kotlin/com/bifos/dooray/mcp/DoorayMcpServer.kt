@@ -1,11 +1,6 @@
 package com.bifos.dooray.mcp
 
 import com.bifos.dooray.mcp.client.DoorayHttpClient
-import io.ktor.client.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.streams.*
 import io.modelcontextprotocol.kotlin.sdk.*
 import io.modelcontextprotocol.kotlin.sdk.server.Server
@@ -15,69 +10,74 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.buffered
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 
 fun runDoorayMcpServer() {
     // 서버 시작 로그를 stderr로 출력 (stdout은 MCP 통신용이므로)
     System.err.println("Dooray MCP Server starting...")
 
     val baseUrl =
-            System.getenv("DOORAY_BASE_URL")
-                    ?: throw IllegalArgumentException("DOORAY_BASE_URL is required.")
+        System.getenv("DOORAY_BASE_URL")
+            ?: throw IllegalArgumentException("DOORAY_BASE_URL is required.")
     val apiKey =
-            System.getenv("DOORAY_API_KEY")
-                    ?: throw IllegalArgumentException("DOORAY_API_KEY is required.")
-    val projectId =
-            System.getenv("DOORAY_PROJECT_ID")
-                    ?: throw IllegalArgumentException("DOORAY_PROJECT_ID is required.")
+        System.getenv("DOORAY_API_KEY")
+            ?: throw IllegalArgumentException("DOORAY_API_KEY is required.")
 
     val doorayHttpClient = DoorayHttpClient(baseUrl = baseUrl, doorayApiKey = apiKey)
 
     System.err.println("DOORAY_API_KEY found, initializing HTTP client...")
 
     val server =
-            Server(
-                    Implementation(name = "dooray-mcp", version = "0.1.0"),
-                    ServerOptions(
-                            capabilities =
-                                    ServerCapabilities(
-                                            tools = ServerCapabilities.Tools(listChanged = true)
-                                    )
+        Server(
+            Implementation(name = "dooray-mcp", version = "0.1.0"),
+            ServerOptions(
+                capabilities =
+                    ServerCapabilities(
+                        tools = ServerCapabilities.Tools(listChanged = true)
                     )
             )
+        )
 
     System.err.println("Adding tools...")
 
     server.addTool(
-            name = "get_wiki_pages",
-            description =
-                    """
+        name = "get_wiki_pages",
+        description =
+            """
             Get wiki pages for a specific wiki ID.
             Returns the list of wiki pages with optional parent page filtering.
         """.trimIndent(),
-            inputSchema =
-                    Tool.Input(
-                            properties =
-                                    buildJsonObject {
-                                        putJsonObject("projectId") {
-                                            put("type", "string")
-                                            put("description", "두레이 프로젝트 ID")
-                                        }
-                                        putJsonObject("parentPageId") {
-                                            put("type", "string")
-                                            put(
-                                                    "description",
-                                                    "상위 페이지 ID (선택사항, null이면 최상위 페이지들 조회)"
-                                            )
-                                        }
-                                    },
-                            required = listOf("wikiId")
-                    )
+        inputSchema =
+            Tool.Input(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("projectId") {
+                            put("type", "string")
+                            put("description", "두레이 프로젝트 ID")
+                        }
+                        putJsonObject("parentPageId") {
+                            put("type", "string")
+                            put(
+                                "description",
+                                "상위 페이지 ID (선택사항, null이면 최상위 페이지들 조회)"
+                            )
+                        }
+                    },
+                required = listOf("projectId")
+            )
     ) { request ->
         val projectId = request.arguments["projectId"]?.jsonPrimitive?.content
         if (projectId == null) {
             return@addTool CallToolResult(
-                    content = listOf(TextContent("The 'projectId' parameter is required."))
+                content =
+                    listOf(
+                        TextContent(
+                            "The 'projectId' parameter is required."
+                        )
+                    )
             )
         }
 
@@ -86,18 +86,20 @@ fun runDoorayMcpServer() {
 
             if (response.header.isSuccessful && response.result != null) {
                 val pageList =
-                        response.result.joinToString("\n") { page ->
-                            "- ${page.subject} (ID: ${page.id}, Version: ${page.version})"
-                        }
-                CallToolResult(content = listOf(TextContent("위키 페이지 목록:\n$pageList")))
+                    response.result.joinToString("\n") { page ->
+                        "- ${page.subject} (ID: ${page.id}, Version: ${page.version})"
+                    }
+                CallToolResult(
+                    content = listOf(TextContent("위키 페이지 목록:\n$pageList"))
+                )
             } else {
                 CallToolResult(
-                        content =
-                                listOf(
-                                        TextContent(
-                                                "API 호출 실패 (${response.header.resultCode}): ${response.header.resultMessage}"
-                                        )
-                                )
+                    content =
+                        listOf(
+                            TextContent(
+                                "API 호출 실패 (${response.header.resultCode}): ${response.header.resultMessage}"
+                            )
+                        )
                 )
             }
         } catch (e: Exception) {

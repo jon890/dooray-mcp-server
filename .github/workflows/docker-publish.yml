@@ -41,8 +41,16 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Test with Gradle
-        run: ./gradlew test
+      - name: Run unit tests
+        run: ./gradlew test --tests "*Test" --tests "!*IntegrationTest"
+
+      - name: Run integration tests
+        if: ${{ secrets.DOORAY_API_KEY != '' }}
+        env:
+          DOORAY_API_KEY: ${{ secrets.DOORAY_API_KEY }}
+          DOORAY_BASE_URL: ${{ secrets.DOORAY_BASE_URL }}
+          DOORAY_PROJECT_ID: ${{ secrets.DOORAY_PROJECT_ID }}
+        run: ./gradlew test --tests "*IntegrationTest"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

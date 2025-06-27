@@ -9,6 +9,16 @@ alwaysApply: true
 - 해당 프로젝트는 kotlin을 사용하며, kotlin-mcp-sdk 0.5.0 버전을 사용한다.
 - 외부에 공개할 프로젝트이므로, 절대로 personal token 등의 정보를 코드에 사용하지 않는다.
 
+## 환경변수
+
+- .env, .env.sample 파일은 Agent에서 읽을 수 없다
+- 따라서 다음의 환경변수 샘플을 참고한다
+```text
+DOORAY_API_KEY=
+DOORAY_BASE_URL=
+DOORAY_PROJECT_ID=
+```
+
 ## Model Context Protocol
 
 - 다음의 경로에 MCP에 대한 문서가 있다.
