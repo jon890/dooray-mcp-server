@@ -1,3 +1,3 @@
 package com.bifos.dooray.mcp
 
-fun main() = runDoorayMcpServer()
+fun main() = DoorayMcpServer().initServer()
