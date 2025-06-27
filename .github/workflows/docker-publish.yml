@@ -45,7 +45,6 @@ jobs:
         run: ./gradlew test --tests "*Test" --tests "!*IntegrationTest"
 
       - name: Run integration tests
-        if: ${{ secrets.DOORAY_API_KEY != '' }}
         env:
           DOORAY_API_KEY: ${{ secrets.DOORAY_API_KEY }}
           DOORAY_BASE_URL: ${{ secrets.DOORAY_BASE_URL }}
