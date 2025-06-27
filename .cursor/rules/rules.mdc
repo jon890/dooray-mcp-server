@@ -1,0 +1,116 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Dooray MCP Server
+
+- NHN Dooray 서비스의 MCP 서버를 제작하는 프로젝트이다.
+- 해당 프로젝트는 kotlin을 사용하며, kotlin-mcp-sdk 0.5.0 버전을 사용한다.
+
+## Model Context Protocol
+
+- 다음의 경로에 MCP에 대한 문서가 있다.
+- https://modelcontextprotocol.io/introduction
+
+## Dooray API Spec
+
+- 다음의 경로에 Dooray API에 대한 문서가 있다
+- https://helpdesk.dooray.com/share/pages/9wWo-xwiR66BO5LGshgVTg/2939987647631384419
+
+## 개발 가이드
+
+### Dooray API 타입 정의 방법
+
+1. **DoorayApiTypes.kt**에 새로운 API 응답 타입을 정의한다.
+2. 모든 타입은 `@Serializable` 어노테이션을 사용한다.
+3. 공통 응답 구조는 `DoorayApiResponse<T>`를 사용한다.
+
+#### 예시:
+```kotlin
+@Serializable
+data class NewApiResponse(
+    val id: String,
+    val name: String,
+    val description: String? = null  // nullable 필드는 기본값 설정
+)
+
+typealias NewApiListResponse = DoorayApiResponse<List<NewApiResponse>>
+```
+
+### Dooray API 함수 추가 방법
+
+1. **DoorayApi.kt**에 HttpClient 확장 함수로 구현한다.
+2. 구체적인 타입을 반환하도록 한다 (`Any` 타입 사용 금지).
+3. 파라미터가 있는 경우 `parameter()` 함수를 사용한다.
+
+#### 예시:
+```kotlin
+suspend fun HttpClient.getNewApiData(id: String, filter: String? = null): NewApiListResponse {
+    return this.get("/api/v1/new-endpoint/$id") {
+        if (filter != null) {
+            parameter("filter", filter)
+        }
+    }.body<NewApiListResponse>()
+}
+```
+
+### MCP Tool 추가 방법
+
+1. **DoorayMcpServer.kt**의 `runDoorayMcpServer()` 함수에 새로운 tool을 추가한다.
+2. `inputSchema`에 필수/선택 파라미터를 정의한다.
+3. 에러 처리와 성공 응답을 적절히 구분한다.
+
+#### 예시:
+```kotlin
+server.addTool(
+    name = "new_tool_name",
+    description = "도구 설명",
+    inputSchema = Tool.Input(
+        properties = buildJsonObject {
+            putJsonObject("requiredParam") {
+                put("type", "string")
+                put("description", "필수 파라미터 설명")
+            }
+            putJsonObject("optionalParam") {
+                put("type", "string")
+                put("description", "선택 파라미터 설명")
+            }
+        },
+        required = listOf("requiredParam")
+    )
+) { request ->
+    try {
+        val param = request.arguments["requiredParam"]?.jsonPrimitive?.content
+            ?: return@addTool CallToolResult(content = listOf(TextContent("필수 파라미터가 없습니다.")))
+        
+        val response = httpClient.getNewApiData(param)
+        
+        if (response.header.isSuccessful) {
+            CallToolResult(content = listOf(TextContent("성공: ${response.result}")))
+        } else {
+            CallToolResult(content = listOf(TextContent("API 호출 실패: ${response.header.resultMessage}")))
+        }
+    } catch (e: Exception) {
+        CallToolResult(content = listOf(TextContent("오류 발생: ${e.message}")))
+    }
+}
+```
+
+### 빌드 및 실행
+
+```bash
+# 빌드
+./gradlew clean shadowJar
+
+# 실행 (환경변수 필요)
+export DOORAY_API_KEY="your_api_key"
+java -jar build/libs/dooray-mcp-server-0.1.0-all.jar
+```
+
+### 주의사항
+
+- `System.err.println()`을 사용하여 로깅 (stdout은 MCP 통신용)
+- API 응답의 `header.isSuccessful`을 항상 확인
+- nullable 필드는 기본값 설정 또는 `?` 표시
+- 파라미터 유효성 검사 필수

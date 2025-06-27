@@ -4,7 +4,5 @@ plugins {
 rootProject.name = "dooray-mcp-server"
 
 dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-    }
+
 }

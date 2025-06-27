@@ -12,6 +12,10 @@ application {
 group = "com.bifos.dooray.mcp"
 version = "0.1.0"
 
+repositories {
+    mavenCentral()
+}
+
 val mcpVersion = "0.5.0"
 val slf4jVersion = "2.0.9"
 val ktorVersion = "3.1.1"
@@ -22,14 +26,60 @@ dependencies {
 
     implementation("io.ktor:ktor-client-content-negotiation:${ktorVersion}")
     implementation("io.ktor:ktor-serialization-kotlinx-json:${ktorVersion}")
+    implementation("io.ktor:ktor-client-logging:${ktorVersion}")
 
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+    testImplementation("io.ktor:ktor-client-mock:${ktorVersion}")
 }
 
 tasks.test {
     useJUnitPlatform()
 }
+
 kotlin {
     jvmToolchain(21)
+}
+
+tasks.register<JavaExec>("runLocal") {
+    description = "로컬에서 MCP 서버를 실행합니다 (.env 파일 사용)"
+    group = "application"
+    
+    // shadowJar 태스크에 의존
+    dependsOn("shadowJar")
+    
+    // .env 파일에서 환경변수 로드
+    doFirst {
+        val envFile = file(".env")
+        if (envFile.exists()) {
+            println("📄 .env 파일에서 환경변수를 로드합니다...")
+            
+            envFile.readLines().forEach { line ->
+                val trimmedLine = line.trim()
+                if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
+                    val parts = trimmedLine.split("=", limit = 2)
+                    if (parts.size == 2) {
+                        val key = parts[0].trim()
+                        val value = parts[1].trim().removeSurrounding("\"").removeSurrounding("'")
+                        environment(key, value)
+                        println("  ✅ $key = $value")
+                    }
+                }
+            }
+            println("🚀 MCP 서버를 시작합니다...")
+        } else {
+            println("⚠️ .env 파일이 없습니다. 환경변수를 수동으로 설정해주세요.")
+            println("💡 .env 파일 예시:")
+            println("  DOORAY_API_KEY=your_api_key_here")
+        }
+    }
+    
+    // 빌드된 JAR 파일 실행
+    classpath = files("build/libs/dooray-mcp-server-${version}-all.jar")
+    mainClass.set("com.bifos.dooray.mcp.MainKt")
+    
+    // 표준 입출력 연결 (MCP 통신용)
+    standardInput = System.`in`
+    standardOutput = System.out
+    errorOutput = System.err
 }
