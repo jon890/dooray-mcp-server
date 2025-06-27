@@ -379,14 +379,28 @@ class DoorayHttpClientIntegrationTest {
 # 빌드
 ./gradlew clean shadowJar
 
+# 테스트 (CI 환경에서는 통합 테스트 자동 제외)
+./gradlew test
+
 # 로컬 실행 (.env 파일 사용)
 ./gradlew runLocal
 
 # 직접 실행 (환경변수 필요)
 export DOORAY_API_KEY="your_api_key"
 export DOORAY_BASE_URL="https://api.dooray.com"
-java -jar build/libs/dooray-mcp-server-0.1.1-all.jar
+java -jar build/libs/dooray-mcp-server-0.1.2-all.jar
 ```
+
+### 테스트 환경 설정
+
+#### CI/CD 환경
+- **GitHub Actions**: `CI=true` 환경변수로 통합 테스트 자동 제외
+- **통합 테스트**: 실제 Dooray API 호출이 필요하므로 CI에서 건너뜀
+- **단위 테스트**: 모든 환경에서 실행
+
+#### 로컬 환경
+- **환경변수 있음**: 모든 테스트 실행 (단위 + 통합)
+- **환경변수 없음**: 통합 테스트 제외하고 단위 테스트만 실행
 
 ### 주의사항
 
