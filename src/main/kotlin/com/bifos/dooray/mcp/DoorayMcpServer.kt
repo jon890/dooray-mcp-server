@@ -1,8 +1,9 @@
 package com.bifos.dooray.mcp
 
 import com.bifos.dooray.mcp.client.DoorayHttpClient
-import com.bifos.dooray.mcp.tools.getWikiPagesHandler
-import com.bifos.dooray.mcp.tools.getWikiPagesTool
+import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_API_KEY
+import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_BASE_URL
+import com.bifos.dooray.mcp.tools.*
 import io.ktor.utils.io.streams.*
 import io.modelcontextprotocol.kotlin.sdk.Implementation
 import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
@@ -19,11 +20,6 @@ class DoorayMcpServer {
 
     private val log = LoggerFactory.getLogger(DoorayMcpServer::class.java)
 
-    companion object {
-        private val DOORAY_BASE_URL = "DOORAY_BASE_URL"
-        private val DOORAY_API_KEY = "DOORAY_API_KEY"
-    }
-
     fun initServer() {
         // 서버 시작 로그를 stderr로 출력 (stdout은 MCP 통신용이므로)
         log.info("Dooray MCP Server starting...")
@@ -31,11 +27,15 @@ class DoorayMcpServer {
         val env = getEnv()
 
         log.info("DOORAY_API_KEY found, initializing HTTP client...")
-        val doorayHttpClient = DoorayHttpClient(baseUrl = env[DOORAY_BASE_URL]!!, doorayApiKey = env[DOORAY_API_KEY]!!)
+        val doorayHttpClient =
+            DoorayHttpClient(
+                baseUrl = env[DOORAY_BASE_URL]!!,
+                doorayApiKey = env[DOORAY_API_KEY]!!
+            )
 
         val server =
             Server(
-                Implementation(name = "dooray-mcp", version = "0.1.1"),
+                Implementation(name = "dooray-mcp", version = "0.1.2"),
                 ServerOptions(
                     capabilities =
                         ServerCapabilities(
@@ -81,6 +81,7 @@ class DoorayMcpServer {
     fun registerTool(server: Server, doorayHttpClient: DoorayHttpClient) {
         log.info("Adding tools...")
 
+        // 기존 도구: 위키 페이지 목록 조회
         val wikiPagesTool = getWikiPagesTool()
         server.addTool(
             name = wikiPagesTool.name,
@@ -88,5 +89,25 @@ class DoorayMcpServer {
             inputSchema = wikiPagesTool.inputSchema,
             handler = getWikiPagesHandler(doorayHttpClient)
         )
+
+        // 새로운 도구: 접근 가능한 위키 목록 조회
+        val wikisTool = getWikisTool()
+        server.addTool(
+            name = wikisTool.name,
+            description = wikisTool.description ?: "",
+            inputSchema = wikisTool.inputSchema,
+            handler = getWikisHandler(doorayHttpClient)
+        )
+
+        // 새로운 도구: 위키 페이지 상세 조회
+        val wikiPageTool = getWikiPageTool()
+        server.addTool(
+            name = wikiPageTool.name,
+            description = wikiPageTool.description ?: "",
+            inputSchema = wikiPageTool.inputSchema,
+            handler = getWikiPageHandler(doorayHttpClient)
+        )
+
+        log.info("Successfully added ${3} tools to MCP server")
     }
 }

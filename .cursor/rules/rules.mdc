@@ -19,6 +19,18 @@ DOORAY_BASE_URL=
 DOORAY_PROJECT_ID=
 ```
 
+### 환경변수 상수 사용
+
+환경변수는 `constants/EnvVariableConst.kt`에 정의된 상수를 사용한다:
+
+```kotlin
+import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_API_KEY
+import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_BASE_URL
+import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_PROJECT_ID
+
+val baseUrl = env[DOORAY_BASE_URL] ?: throw IllegalStateException("...")
+```
+
 ## Model Context Protocol
 
 - 다음의 경로에 MCP에 대한 문서가 있다.
@@ -33,7 +45,7 @@ DOORAY_PROJECT_ID=
 
 ### Dooray API 타입 정의 방법
 
-1. **DoorayApiTypes.kt**에 새로운 API 응답 타입을 정의한다.
+1. **types** 패키지에 새로운 API 응답 타입을 정의한다.
 2. 모든 타입은 `@Serializable` 어노테이션을 사용한다.
 3. 공통 응답 구조는 `DoorayApiResponse<T>`를 사용한다.
 
@@ -51,59 +63,312 @@ typealias NewApiListResponse = DoorayApiResponse<List<NewApiResponse>>
 
 ### Dooray API 함수 추가 방법
 
-1. **DoorayApi.kt**에 HttpClient 확장 함수로 구현한다.
-2. 구체적인 타입을 반환하도록 한다 (`Any` 타입 사용 금지).
-3. 파라미터가 있는 경우 `parameter()` 함수를 사용한다.
+1. **client/DoorayClient.kt** 인터페이스에 새로운 함수를 정의한다.
+2. **client/DoorayHttpClient.kt**에 구체적인 구현을 추가한다.
+3. 구체적인 타입을 반환하도록 한다 (`Any` 타입 사용 금지).
+4. **템플릿 메소드 패턴**을 사용하여 공통 처리 로직을 활용한다.
+
+#### 템플릿 메소드 패턴 사용:
+
+**DoorayHttpClient.kt**에서는 다음 템플릿 함수들을 사용한다:
+
+```kotlin
+private suspend inline fun <reified T> executeApiCall(
+    operation: String,
+    expectedStatusCode: HttpStatusCode = HttpStatusCode.OK,
+    successMessage: String? = null,
+    crossinline apiCall: suspend () -> HttpResponse
+): T
+
+private suspend fun executeApiCallWithoutBody(
+    operation: String,
+    expectedStatusCode: HttpStatusCode = HttpStatusCode.NoContent,
+    successMessage: String,
+    apiCall: suspend () -> HttpResponse
+): DoorayApiResponse<Unit>
+```
 
 #### 예시:
+
+**client/DoorayClient.kt 인터페이스에 추가:**
 ```kotlin
-suspend fun HttpClient.getNewApiData(id: String, filter: String? = null): NewApiListResponse {
-    return this.get("/api/v1/new-endpoint/$id") {
-        if (filter != null) {
-            parameter("filter", filter)
+suspend fun getNewApiData(id: String, filter: String? = null): NewApiListResponse
+```
+
+**client/DoorayHttpClient.kt 구현에 추가:**
+```kotlin
+override suspend fun getNewApiData(id: String, filter: String?): NewApiListResponse {
+    return executeApiCall(
+        operation = "GET /api/v1/new-endpoint/$id",
+        successMessage = "✅ 새로운 데이터 조회 성공"
+    ) {
+        httpClient.get("/api/v1/new-endpoint/$id") {
+            filter?.let { parameter("filter", it) }
         }
-    }.body<NewApiListResponse>()
+    }
 }
 ```
 
 ### MCP Tool 추가 방법
 
-1. **DoorayMcpServer.kt**의 `runDoorayMcpServer()` 함수에 새로운 tool을 추가한다.
-2. `inputSchema`에 필수/선택 파라미터를 정의한다.
-3. 에러 처리와 성공 응답을 적절히 구분한다.
+1. **tools** 패키지에 각 도구별로 별도 파일을 생성한다.
+2. 각 파일에 Tool 함수와 Handler 함수를 정의한다.
+3. **DoorayMcpServer.kt**의 `registerTool()` 함수에 도구를 등록한다.
+4. Tool 함수에서 `inputSchema`에 필수/선택 파라미터를 정의한다.
+5. Handler 함수에서 **JSON 형태의 규격화된 응답**을 반환한다.
 
-#### 예시:
+#### Tool 응답 규격화
+
+모든 Tool은 다음과 같이 JSON 형태로 응답을 반환해야 한다:
+
+**성공 응답:**
+```json
+{
+  "success": true,
+  "data": { /* 실제 데이터 */ },
+  "message": "성공 메시지"
+}
+```
+
+**에러 응답:**
+```json
+{
+  "success": false,
+  "error": {
+    "type": "PARAMETER_MISSING",
+    "code": "MISSING_PROJECT_ID",
+    "details": "추가 세부 정보"
+  },
+  "message": "에러 메시지"
+}
+```
+
+#### 파일명 규칙:
+- `Get{기능}Tool.kt` 형식으로 명명 (예: `GetWikisTool.kt`, `GetWikiPageTool.kt`)
+- 한 파일에는 하나의 도구만 포함
+- Tool과 Handler 함수를 같은 파일에 함께 정의
+
+#### 필수 Import 구문:
 ```kotlin
-server.addTool(
-    name = "new_tool_name",
-    description = "도구 설명",
-    inputSchema = Tool.Input(
-        properties = buildJsonObject {
-            putJsonObject("requiredParam") {
-                put("type", "string")
-                put("description", "필수 파라미터 설명")
+package com.bifos.dooray.mcp.tools
+
+import com.bifos.dooray.mcp.client.DoorayClient
+import com.bifos.dooray.mcp.types.ToolException
+import com.bifos.dooray.mcp.types.ToolSuccessResponse
+import com.bifos.dooray.mcp.utils.JsonUtils
+import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.TextContent
+import io.modelcontextprotocol.kotlin.sdk.Tool
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
+```
+
+#### 예외 처리 방법:
+
+도구에서 예외를 처리할 때는 `ToolException`을 사용하여 JSON 형태로 반환:
+
+```kotlin
+// 파라미터 누락 에러
+val errorResponse = ToolException(
+    type = ToolException.PARAMETER_MISSING,
+    message = "projectId 파라미터가 필요합니다.",
+    code = "MISSING_PROJECT_ID"
+).toErrorResponse()
+
+CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
+
+// API 에러
+val errorResponse = ToolException(
+    type = ToolException.API_ERROR,
+    message = response.header.resultMessage,
+    code = "DOORAY_API_${response.header.resultCode}"
+).toErrorResponse()
+
+// 내부 에러
+val errorResponse = ToolException(
+    type = ToolException.INTERNAL_ERROR,
+    message = "내부 오류가 발생했습니다: ${e.message}",
+    details = e.stackTraceToString()
+).toErrorResponse()
+```
+
+#### 실제 구현 예시:
+
+**tools/GetWikisTool.kt:**
+```kotlin
+package com.bifos.dooray.mcp.tools
+
+import com.bifos.dooray.mcp.client.DoorayClient
+import com.bifos.dooray.mcp.types.ToolException
+import com.bifos.dooray.mcp.types.ToolSuccessResponse
+import com.bifos.dooray.mcp.utils.JsonUtils
+import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.TextContent
+import io.modelcontextprotocol.kotlin.sdk.Tool
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
+
+fun getWikisTool(): Tool {
+    return Tool(
+        name = "get_wikis",
+        description = "접근 가능한 위키 목록을 조회합니다. 프로젝트 이름으로 프로젝트 ID를 찾을 때 유용합니다.",
+        inputSchema = Tool.Input(
+            properties = buildJsonObject {
+                putJsonObject("page") {
+                    put("type", "number")
+                    put("description", "페이지 번호 (선택사항)")
+                }
+                putJsonObject("size") {
+                    put("type", "number")
+                    put("description", "페이지 크기 (선택사항)")
+                }
             }
-            putJsonObject("optionalParam") {
-                put("type", "string")
-                put("description", "선택 파라미터 설명")
-            }
-        },
-        required = listOf("requiredParam")
+        )
     )
-) { request ->
-    try {
-        val param = request.arguments["requiredParam"]?.jsonPrimitive?.content
-            ?: return@addTool CallToolResult(content = listOf(TextContent("필수 파라미터가 없습니다.")))
-        
-        val response = httpClient.getNewApiData(param)
-        
-        if (response.header.isSuccessful) {
-            CallToolResult(content = listOf(TextContent("성공: ${response.result}")))
-        } else {
-            CallToolResult(content = listOf(TextContent("API 호출 실패: ${response.header.resultMessage}")))
+}
+
+fun getWikisHandler(doorayClient: DoorayClient): suspend (CallToolRequest) -> CallToolResult {
+    return { request ->
+        try {
+            val page = request.arguments["page"]?.jsonPrimitive?.content?.toIntOrNull()
+            val size = request.arguments["size"]?.jsonPrimitive?.content?.toIntOrNull()
+
+            val response = doorayClient.getWikis(page, size)
+
+            if (response.header.isSuccessful) {
+                val successResponse = ToolSuccessResponse(
+                    data = response.result,
+                    message = "접근 가능한 위키 목록을 성공적으로 조회했습니다 (총 ${response.result.size}개)"
+                )
+                
+                CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(successResponse))))
+            } else {
+                val errorResponse = ToolException(
+                    type = ToolException.API_ERROR,
+                    message = response.header.resultMessage,
+                    code = "DOORAY_API_${response.header.resultCode}"
+                ).toErrorResponse()
+                
+                CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
+            }
+        } catch (e: Exception) {
+            val errorResponse = ToolException(
+                type = ToolException.INTERNAL_ERROR,
+                message = "내부 오류가 발생했습니다: ${e.message}",
+                details = e.stackTraceToString()
+            ).toErrorResponse()
+            
+            CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
         }
-    } catch (e: Exception) {
-        CallToolResult(content = listOf(TextContent("오류 발생: ${e.message}")))
+    }
+}
+```
+
+**DoorayMcpServer.kt에 import 추가:**
+```kotlin
+import com.bifos.dooray.mcp.tools.getWikisTool
+import com.bifos.dooray.mcp.tools.getWikisHandler
+import com.bifos.dooray.mcp.tools.getWikiPagesTool
+import com.bifos.dooray.mcp.tools.getWikiPagesHandler
+import com.bifos.dooray.mcp.tools.getWikiPageTool
+import com.bifos.dooray.mcp.tools.getWikiPageHandler
+```
+
+**DoorayMcpServer.kt의 registerTool() 함수에 추가:**
+```kotlin
+private fun registerTool(server: Server, doorayHttpClient: DoorayHttpClient) {
+    // 위키 목록 조회 도구
+    val wikisTool = getWikisTool()
+    server.addTool(
+        name = wikisTool.name,
+        description = wikisTool.description ?: "",
+        inputSchema = wikisTool.inputSchema,
+        handler = getWikisHandler(doorayHttpClient)
+    )
+
+    // 위키 페이지 목록 조회 도구
+    val wikiPagesTool = getWikiPagesTool()
+    server.addTool(
+        name = wikiPagesTool.name,
+        description = wikiPagesTool.description ?: "",
+        inputSchema = wikiPagesTool.inputSchema,
+        handler = getWikiPagesHandler(doorayHttpClient)
+    )
+
+    // 위키 페이지 상세 조회 도구
+    val wikiPageTool = getWikiPageTool()
+    server.addTool(
+        name = wikiPageTool.name,
+        description = wikiPageTool.description ?: "",
+        inputSchema = wikiPageTool.inputSchema,
+        handler = getWikiPageHandler(doorayHttpClient)
+    )
+}
+```
+
+#### 중요한 주의사항:
+- **JSON 응답 규격화**: 모든 Tool은 `ToolSuccessResponse` 또는 `ToolErrorResponse` 형태로 응답
+- **예외 처리**: `ToolException`을 사용하여 일관된 에러 형태 제공
+- **Import 오류 방지**: 새로운 도구를 추가할 때마다 `DoorayMcpServer.kt`에 해당 도구의 함수들을 개별적으로 import해야 합니다.
+- **패키지 구조**: 모든 도구는 `com.bifos.dooray.mcp.tools` 패키지에 위치해야 합니다.
+- **명명 규칙**: Tool 함수는 `get{기능}Tool()`, Handler 함수는 `get{기능}Handler()` 형식을 사용합니다.
+- **JSON 직렬화**: `JsonUtils.toJsonString()`을 사용하여 객체를 JSON 문자열로 변환
+
+### 테스트 작성 가이드
+
+#### 통합 테스트 작성 방법
+
+1. **환경변수 상수 사용**: `EnvVariableConst`에서 정의된 상수를 사용한다.
+2. **@DisplayName 사용**: 테스트 목적을 명확히 기술한다.
+3. **given-when-then 패턴**: 코멘트로 테스트 구조를 명확히 한다.
+4. **환경변수 검증**: 필수 환경변수가 없으면 `IllegalStateException`을 던진다.
+
+#### 테스트 예시:
+```kotlin
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class DoorayHttpClientIntegrationTest {
+
+    lateinit var env: Map<String, String>
+    lateinit var doorayClient: DoorayClient
+
+    @BeforeAll
+    fun setup() {
+        env = parseEnv()
+
+        val baseUrl = env[DOORAY_BASE_URL]
+            ?: throw IllegalStateException("DOORAY_BASE_URL 환경변수가 설정되지 않았습니다.")
+        val apiKey = env[DOORAY_API_KEY]
+            ?: throw IllegalStateException("DOORAY_API_KEY 환경변수가 설정되지 않았습니다.")
+
+        doorayClient = DoorayHttpClient(baseUrl, apiKey)
+    }
+
+    @Test
+    @DisplayName("내가 조회할 수 있는 위키 목록들이 조회된다")
+    fun getWikisTest() = runTest {
+        // when
+        val response = doorayClient.getWikis()
+
+        // then
+        assertAll(
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
+        )
+
+        response.result.let { wikis ->
+            assertTrue { wikis.isNotEmpty() }
+            wikis.forEach { wiki ->
+                assertNotNull(wiki.id)
+                assertNotNull(wiki.project.id)
+                assertNotNull(wiki.name)
+            }
+        }
     }
 }
 ```
@@ -114,14 +379,24 @@ server.addTool(
 # 빌드
 ./gradlew clean shadowJar
 
-# 실행 (환경변수 필요)
+# 로컬 실행 (.env 파일 사용)
+./gradlew runLocal
+
+# 직접 실행 (환경변수 필요)
 export DOORAY_API_KEY="your_api_key"
-java -jar build/libs/dooray-mcp-server-0.1.0-all.jar
+export DOORAY_BASE_URL="https://api.dooray.com"
+java -jar build/libs/dooray-mcp-server-0.1.1-all.jar
 ```
 
 ### 주의사항
 
-- `System.err.println()`을 사용하여 로깅 (stdout은 MCP 통신용)
-- API 응답의 `header.isSuccessful`을 항상 확인
-- nullable 필드는 기본값 설정 또는 `?` 표시
-- 파라미터 유효성 검사 필수
+- **SLF4J 로깅**: 콘솔 출력 대신 SLF4J 로거 사용 (stdout은 MCP 통신용)
+- **템플릿 메소드 패턴**: API 호출은 `executeApiCall()` 템플릿 함수 사용
+- **환경변수 상수**: `EnvVariableConst`에 정의된 상수 사용
+- **API 응답 확인**: `header.isSuccessful`을 항상 확인
+- **nullable 필드**: 기본값 설정 또는 `?` 표시
+- **파라미터 유효성 검사**: 필수 파라미터 null 체크
+- **Tool과 Handler 분리**: 재사용성 향상을 위한 구조
+- **테스트 정리**: given-when-then 패턴과 명확한 DisplayName 사용
+- **JSON 응답**: 모든 Tool 응답은 JSON 형태로 규격화하여 반환
+- **예외 처리**: `ToolException`을 사용하여 일관된 에러 응답 제공

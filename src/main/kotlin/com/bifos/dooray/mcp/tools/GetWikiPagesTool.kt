@@ -1,6 +1,9 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
+import com.bifos.dooray.mcp.exception.ToolException
+import com.bifos.dooray.mcp.types.ToolSuccessResponse
+import com.bifos.dooray.mcp.utils.JsonUtils
 import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
@@ -13,9 +16,10 @@ import kotlinx.serialization.json.putJsonObject
 fun getWikiPagesTool(): Tool {
     return Tool(
         name = "get_wiki_pages",
-        description = """
-            Get wiki pages for a specific wiki ID.
-            Returns the list of wiki pages with optional parent page filtering.
+        description =
+            """
+            특정 프로젝트의 위키 페이지 목록을 조회합니다.
+            상위 페이지 ID를 지정하면 해당 페이지의 하위 페이지들을 조회할 수 있습니다.
         """.trimIndent(),
         inputSchema =
             Tool.Input(
@@ -40,38 +44,67 @@ fun getWikiPagesTool(): Tool {
 
 fun getWikiPagesHandler(doorayClient: DoorayClient): suspend (CallToolRequest) -> CallToolResult {
     return { request ->
-        val projectId = request.arguments["projectId"]?.jsonPrimitive?.content
-        if (projectId == null) {
-            CallToolResult(
-                content =
-                    listOf(
-                        TextContent(
-                            "The 'projectId' parameter is required."
-                        )
-                    )
-            )
-        }
-
         try {
-            val response = doorayClient.getWikiPages(projectId!!)
+            val projectId = request.arguments["projectId"]?.jsonPrimitive?.content
+            if (projectId == null) {
+                val errorResponse =
+                    ToolException(
+                        type = ToolException.PARAMETER_MISSING,
+                        message = "projectId 파라미터가 필요합니다.",
+                        code = "MISSING_PROJECT_ID"
+                    )
+                        .toErrorResponse()
 
-            if (response.header.isSuccessful) {
-                val wikiPages = response.result
-                CallToolResult(
-                    content = wikiPages.map { it -> TextContent(it.toString()) }
-                )
+                CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
             } else {
-                CallToolResult(
-                    content =
-                        listOf(
-                            TextContent(
-                                "API 호출 실패 (${response.header.resultCode}): ${response.header.resultMessage}"
-                            )
+                val parentPageId = request.arguments["parentPageId"]?.jsonPrimitive?.content
+
+                val response =
+                    if (parentPageId != null) {
+                        doorayClient.getWikiPages(projectId, parentPageId)
+                    } else {
+                        doorayClient.getWikiPages(projectId)
+                    }
+
+                if (response.header.isSuccessful) {
+                    val successResponse =
+                        ToolSuccessResponse(
+                            data = response.result,
+                            message =
+                                if (parentPageId != null) {
+                                    "하위 위키 페이지 목록을 성공적으로 조회했습니다 (총 ${response.result.size}개)"
+                                } else {
+                                    "위키 페이지 목록을 성공적으로 조회했습니다 (총 ${response.result.size}개)"
+                                }
                         )
-                )
+
+                    CallToolResult(
+                        content = listOf(TextContent(JsonUtils.toJsonString(successResponse)))
+                    )
+                } else {
+                    val errorResponse =
+                        ToolException(
+                            type = ToolException.API_ERROR,
+                            message = response.header.resultMessage,
+                            code = "DOORAY_API_${response.header.resultCode}"
+                        )
+                            .toErrorResponse()
+
+                    CallToolResult(
+                        content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
+                    )
+                }
             }
         } catch (e: Exception) {
-            CallToolResult(content = listOf(TextContent("오류 발생: ${e.message}")))
+            val errorResponse =
+                ToolException(
+                    type = ToolException.INTERNAL_ERROR,
+                    message = "내부 오류가 발생했습니다: ${e.message}",
+                    details = e.stackTraceToString()
+                )
+                    .toErrorResponse()
+
+            CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
         }
     }
 }

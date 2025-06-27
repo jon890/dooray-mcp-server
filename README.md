@@ -60,7 +60,7 @@ cp .env.sample .env
 docker run -e DOORAY_API_KEY="your_tenant:your_api_token" bifos/dooray-mcp:latest
 
 # 특정 버전 실행
-docker run -e DOORAY_API_KEY="your_tenant:your_api_token" bifos/dooray-mcp:0.1.0
+docker run -e DOORAY_API_KEY="your_tenant:your_api_token" bifos/dooray-mcp:0.1.1
 ```
 
 **필요한 .env 파일 설정:**

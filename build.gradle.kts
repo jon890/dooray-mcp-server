@@ -10,23 +10,24 @@ application {
 }
 
 group = "com.bifos.dooray.mcp"
-version = "0.1.1"
+version = "0.1.2"
 
 repositories {
     mavenCentral()
 }
 
 val mcpVersion = "0.5.0"
-val slf4jVersion = "2.0.9"
 val ktorVersion = "3.1.1"
+val logbackVersion = "1.5.18"
 
 dependencies {
     implementation("io.modelcontextprotocol:kotlin-sdk:${mcpVersion}")
-    implementation("org.slf4j:slf4j-nop:${slf4jVersion}")
 
     implementation("io.ktor:ktor-client-content-negotiation:${ktorVersion}")
     implementation("io.ktor:ktor-serialization-kotlinx-json:${ktorVersion}")
     implementation("io.ktor:ktor-client-logging:${ktorVersion}")
+
+    implementation("ch.qos.logback:logback-classic:${logbackVersion}")
 
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
@@ -35,15 +36,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    
-    // CI 환경에서는 통합 테스트 제외
+
+    // GitHub Actions 환경에서는 통합 테스트 제외
     if (System.getenv("CI") == "true") {
         exclude("**/*IntegrationTest*")
-        systemProperty("skipIntegrationTests", "true")
-        
-        doFirst {
-            println("🔧 CI 환경에서 실행 중: 통합 테스트를 제외합니다")
-        }
+        println("🚫 CI 환경에서는 통합 테스트를 제외합니다.")
     }
 }
 
@@ -54,16 +51,16 @@ kotlin {
 tasks.register<JavaExec>("runLocal") {
     description = "로컬에서 MCP 서버를 실행합니다 (.env 파일 사용)"
     group = "application"
-    
+
     // shadowJar 태스크에 의존
     dependsOn("shadowJar")
-    
+
     // .env 파일에서 환경변수 로드
     doFirst {
         val envFile = file(".env")
         if (envFile.exists()) {
             println("📄 .env 파일에서 환경변수를 로드합니다...")
-            
+
             envFile.readLines().forEach { line ->
                 val trimmedLine = line.trim()
                 if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
@@ -83,11 +80,11 @@ tasks.register<JavaExec>("runLocal") {
             println("  DOORAY_API_KEY=your_api_key_here")
         }
     }
-    
+
     // 빌드된 JAR 파일 실행 (동적 버전 사용)
     classpath = files("build/libs/dooray-mcp-server-${version}-all.jar")
     mainClass.set("com.bifos.dooray.mcp.MainKt")
-    
+
     // 표준 입출력 연결 (MCP 통신용)
     standardInput = System.`in`
     standardOutput = System.out
