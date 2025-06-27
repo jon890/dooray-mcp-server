@@ -13,12 +13,6 @@ AI 도구를 활용하여 NHN Dooray를 컨트롤할 수 있도록 합니다.
 cat > .env << EOF
 # Dooray API 키 (필수)
 DOORAY_API_KEY=your_tenant:your_api_token
-
-# 테스트용 위키 ID (선택사항)
-TEST_WIKI_ID=your_wiki_id
-
-# 테스트용 상위 페이지 ID (선택사항)
-TEST_PARENT_PAGE_ID=parent_page_id
 EOF
 ```
 
@@ -72,9 +66,9 @@ java -jar build/libs/dooray-mcp-server-0.1.0-all.jar
 
 ### get_wiki_pages
 
-- **설명**: 특정 위키의 페이지들을 조회합니다
+- **설명**: 특정 프로젝트의 위키 페이지들을 조회합니다
 - **파라미터**:
-  - `wikiId` (필수): 위키 ID
+  - `projectId` (필수): 프로젝트 ID
   - `parentPageId` (선택): 상위 페이지 ID (null이면 최상위 페이지들 조회)
 
 #### 사용 예시
@@ -83,8 +77,8 @@ java -jar build/libs/dooray-mcp-server-0.1.0-all.jar
 {
   "name": "get_wiki_pages",
   "arguments": {
-    "wikiId": "3647142034893802388",
-    "parentPageId": "100"
+    "projectId": "1234567890",
+    "parentPageId": "1234567890"
   }
 }
 ```
@@ -94,13 +88,3 @@ java -jar build/libs/dooray-mcp-server-0.1.0-all.jar
 - [두레이 API](https://helpdesk.dooray.com/share/pages/9wWo-xwiR66BO5LGshgVTg/2939987647631384419)
 - [Kotlin MCP Server 예제](https://github.com/modelcontextprotocol/kotlin-sdk/blob/main/samples/weather-stdio-server/src/main/kotlin/io/modelcontextprotocol/sample/server/McpWeatherServer.kt)
 - [Model Context Protocol](https://modelcontextprotocol.io/introduction)
-
-## 🔑 API 키 설정
-
-Dooray API 키는 다음 형식으로 설정해야 합니다:
-
-```
-tenant:token
-```
-
-예시: `ajjt1imxmtj4:CoVSbgZyR3iIpHSQTvJnmw`
