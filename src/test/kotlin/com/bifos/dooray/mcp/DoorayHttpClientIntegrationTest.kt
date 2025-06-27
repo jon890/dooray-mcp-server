@@ -40,7 +40,7 @@ class DoorayHttpClientIntegrationTest {
     @DisplayName("내가 조회할 수 있는 위키 목록들이 조회된다")
     fun getWikisTest() = runTest {
         // when
-        val response = doorayClient.getWikis()
+        val response = doorayClient.getWikis(size = 200)
 
         // given
         assertAll(

@@ -23,11 +23,13 @@ fun getWikisTool(): Tool {
                     buildJsonObject {
                         putJsonObject("page") {
                             put("type", "number")
-                            put("description", "조회할 페이지 번호 (기본값: 1)")
+                            put("description", "조회할 페이지 번호 (0부터 시작, 기본값: 0)")
+                            put("default", 0)
                         }
                         putJsonObject("size") {
                             put("type", "number")
-                            put("description", "한 페이지당 결과 수 (기본값: 20)")
+                            put("description", "한 페이지당 결과 수 (기본값: 20, 최대: 200)")
+                            put("default", 20)
                         }
                     }
             )
@@ -37,17 +39,29 @@ fun getWikisTool(): Tool {
 fun getWikisHandler(doorayClient: DoorayClient): suspend (CallToolRequest) -> CallToolResult {
     return { request ->
         try {
-            val page = request.arguments["page"]?.jsonPrimitive?.content?.toIntOrNull()
-            val size = request.arguments["size"]?.jsonPrimitive?.content?.toIntOrNull()
+            // 기본값 처리: page는 0, size는 20
+            val page = request.arguments["page"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0
+            val size = request.arguments["size"]?.jsonPrimitive?.content?.toIntOrNull() ?: 20
 
             val response = doorayClient.getWikis(page, size)
 
             if (response.header.isSuccessful) {
+                val pageInfo = if (page == 0) "첫 번째 페이지" else "${page + 1}번째 페이지"
+
+                // 다음 단계 제안 메시지
+                val nextStepHint =
+                    if (response.result.isNotEmpty()) {
+                        "\n\n💡 다음 단계: 특정 프로젝트의 위키 페이지들을 보려면 dooray_wiki_list_pages를 사용하세요."
+                    } else {
+                        if (page == 0) "\n\n📋 조회 결과가 없습니다. 접근 권한을 확인해주세요."
+                        else "\n\n📄 더 이상 프로젝트가 없습니다."
+                    }
+
                 val successResponse =
                     ToolSuccessResponse(
                         data = response.result,
                         message =
-                            "📚 두레이 위키 프로젝트 목록을 성공적으로 조회했습니다 (총 ${response.result.size}개)"
+                            "📚 두레이 위키 프로젝트 목록을 성공적으로 조회했습니다 ($pageInfo, 총 ${response.result.size}개)$nextStepHint"
                     )
 
                 CallToolResult(
