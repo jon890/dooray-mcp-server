@@ -10,7 +10,7 @@ application {
 }
 
 group = "com.bifos.dooray.mcp"
-version = "0.1.0"
+version = "0.1.1"
 
 repositories {
     mavenCentral()
@@ -84,7 +84,7 @@ tasks.register<JavaExec>("runLocal") {
         }
     }
     
-    // 빌드된 JAR 파일 실행
+    // 빌드된 JAR 파일 실행 (동적 버전 사용)
     classpath = files("build/libs/dooray-mcp-server-${version}-all.jar")
     mainClass.set("com.bifos.dooray.mcp.MainKt")
     

@@ -23,10 +23,14 @@ RUN ./gradlew clean shadowJar --no-daemon
 # 런타임 스테이지
 FROM eclipse-temurin:21-jre-alpine
 
+# 버전을 빌드 인수로 받기
+ARG VERSION=0.1.0
+ENV APP_VERSION=${VERSION}
+
 # 메타데이터 라벨
 LABEL maintainer="bifos"
 LABEL description="Dooray MCP Server - Model Context Protocol server for NHN Dooray"
-LABEL version="0.1.0"
+LABEL version="${APP_VERSION}"
 
 # 비루트 사용자 생성
 RUN addgroup -g 1000 dooray && \
@@ -35,8 +39,8 @@ RUN addgroup -g 1000 dooray && \
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# 빌드된 JAR 파일 복사
-COPY --from=builder /app/build/libs/dooray-mcp-server-0.1.0-all.jar app.jar
+# 빌드된 JAR 파일 복사 (버전 변수 사용)
+COPY --from=builder /app/build/libs/dooray-mcp-server-${VERSION}-all.jar app.jar
 
 # 파일 소유권 변경
 RUN chown -R dooray:dooray /app

@@ -14,8 +14,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: String) :
-        DoorayClient {
+class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: String) : DoorayClient {
 
     private val httpClient: HttpClient
 
@@ -34,10 +33,10 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
             // install content negotiation plugin for JSON serialization/deserialization
             install(ContentNegotiation) {
                 json(
-                        Json {
-                            ignoreUnknownKeys = true
-                            prettyPrint = true
-                        }
+                    Json {
+                        ignoreUnknownKeys = true
+                        prettyPrint = true
+                    }
                 )
             }
 
@@ -62,6 +61,7 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
                     println("✅ 성공적으로 파싱: ${result.result?.size ?: 0}개 페이지")
                     result
                 }
+
                 else -> {
                     val responseBody = response.bodyAsText()
                     println("❌ API 오류 응답:")

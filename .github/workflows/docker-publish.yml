@@ -41,6 +41,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Extract version from build.gradle.kts
+        id: version
+        run: |
+          VERSION=$(./gradlew properties --no-daemon --console=plain -q | grep "^version:" | awk '{print $2}')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 추출된 버전: $VERSION"
+
       - name: Run tests (excluding integration tests in CI)
         env:
           CI: true
@@ -86,6 +93,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ steps.version.outputs.VERSION }}
 
       - name: Generate artifact attestation
         if: github.event_name != 'pull_request'
