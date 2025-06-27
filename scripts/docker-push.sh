@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 
 # 변수 설정
 IMAGE_NAME="bifos/dooray-mcp"
-VERSION=$(grep 'version = ' ../build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+VERSION=$(grep 'version = ' ./build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
 LATEST_TAG="latest"
 
 echo -e "${BLUE}🚀 Docker Hub에 이미지 푸시 시작${NC}"

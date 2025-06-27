@@ -15,19 +15,26 @@ import kotlinx.serialization.json.putJsonObject
 
 fun getWikiPageTool(): Tool {
     return Tool(
-        name = "get_wiki_page",
-        description = "특정 위키 페이지의 상세 정보를 조회합니다. 페이지 내용, 작성자, 생성/수정 날짜 등을 확인할 수 있습니다.",
+        name = "dooray_wiki_get_page",
+        description =
+            "특정 두레이 위키 페이지의 상세 정보를 조회합니다. 페이지 제목, 내용, 작성자, 수정 이력 등 모든 정보를 확인할 수 있습니다.",
         inputSchema =
             Tool.Input(
                 properties =
                     buildJsonObject {
                         putJsonObject("projectId") {
                             put("type", "string")
-                            put("description", "프로젝트 ID")
+                            put(
+                                "description",
+                                "위키 프로젝트 ID (dooray_wiki_list_projects로 조회 가능)"
+                            )
                         }
                         putJsonObject("pageId") {
                             put("type", "string")
-                            put("description", "조회할 위키 페이지 ID")
+                            put(
+                                "description",
+                                "위키 페이지 ID (dooray_wiki_list_pages로 조회 가능)"
+                            )
                         }
                     },
                 required = listOf("projectId", "pageId")
@@ -46,7 +53,8 @@ fun getWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest) ->
                     val errorResponse =
                         ToolException(
                             type = ToolException.PARAMETER_MISSING,
-                            message = "projectId 파라미터가 필요합니다.",
+                            message =
+                                "projectId 파라미터가 필요합니다. dooray_wiki_list_projects를 사용해서 프로젝트 ID를 먼저 조회하세요.",
                             code = "MISSING_PROJECT_ID"
                         )
                             .toErrorResponse()
@@ -60,7 +68,8 @@ fun getWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest) ->
                     val errorResponse =
                         ToolException(
                             type = ToolException.PARAMETER_MISSING,
-                            message = "pageId 파라미터가 필요합니다.",
+                            message =
+                                "pageId 파라미터가 필요합니다. dooray_wiki_list_pages를 사용해서 페이지 ID를 먼저 조회하세요.",
                             code = "MISSING_PAGE_ID"
                         )
                             .toErrorResponse()
@@ -78,7 +87,7 @@ fun getWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest) ->
                             ToolSuccessResponse(
                                 data = response.result,
                                 message =
-                                    "위키 페이지 '${response.result.subject}'를 성공적으로 조회했습니다"
+                                    "📖 위키 페이지 '${response.result.subject}'의 상세 정보를 성공적으로 조회했습니다"
                             )
 
                         CallToolResult(

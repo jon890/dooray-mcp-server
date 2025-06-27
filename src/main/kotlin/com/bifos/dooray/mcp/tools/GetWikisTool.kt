@@ -15,19 +15,19 @@ import kotlinx.serialization.json.putJsonObject
 
 fun getWikisTool(): Tool {
     return Tool(
-        name = "get_wikis",
-        description = "접근 가능한 위키 목록을 조회합니다. 프로젝트 이름으로 프로젝트 ID를 찾을 때 유용합니다.",
+        name = "dooray_wiki_list_projects",
+        description = "두레이에서 접근 가능한 위키 프로젝트 목록을 조회합니다. 특정 프로젝트의 이름으로 프로젝트 ID를 찾을 때 사용하세요.",
         inputSchema =
             Tool.Input(
                 properties =
                     buildJsonObject {
                         putJsonObject("page") {
                             put("type", "number")
-                            put("description", "페이지 번호 (선택사항)")
+                            put("description", "조회할 페이지 번호 (기본값: 1)")
                         }
                         putJsonObject("size") {
                             put("type", "number")
-                            put("description", "페이지 크기 (선택사항)")
+                            put("description", "한 페이지당 결과 수 (기본값: 20)")
                         }
                     }
             )
@@ -46,7 +46,8 @@ fun getWikisHandler(doorayClient: DoorayClient): suspend (CallToolRequest) -> Ca
                 val successResponse =
                     ToolSuccessResponse(
                         data = response.result,
-                        message = "접근 가능한 위키 목록을 성공적으로 조회했습니다 (총 ${response.result.size}개)"
+                        message =
+                            "📚 두레이 위키 프로젝트 목록을 성공적으로 조회했습니다 (총 ${response.result.size}개)"
                     )
 
                 CallToolResult(
