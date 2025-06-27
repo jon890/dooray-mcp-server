@@ -1,0 +1,40 @@
+# Git 관련
+.git
+.gitignore
+
+# IDE 관련
+.idea/
+.vscode/
+.cursor/
+*.iml
+*.ipr
+*.iws
+
+# 빌드 결과물 (Docker에서 새로 빌드하므로 제외)
+build/
+.gradle/
+.kotlin/
+
+# 환경 설정
+.env
+.env.*
+
+# 문서
+README.md
+*.md
+
+# 로그
+*.log
+
+# OS 관련
+.DS_Store
+Thumbs.db
+
+# 테스트 관련
+.coverage/
+coverage/
+
+# 임시 파일
+*.tmp
+*.temp
+*~ 

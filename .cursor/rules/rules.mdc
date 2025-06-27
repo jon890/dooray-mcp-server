@@ -7,6 +7,7 @@ alwaysApply: true
 
 - NHN Dooray 서비스의 MCP 서버를 제작하는 프로젝트이다.
 - 해당 프로젝트는 kotlin을 사용하며, kotlin-mcp-sdk 0.5.0 버전을 사용한다.
+- 외부에 공개할 프로젝트이므로, 절대로 personal token 등의 정보를 코드에 사용하지 않는다.
 
 ## Model Context Protocol
 

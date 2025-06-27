@@ -1,0 +1,53 @@
+services:
+  dooray-mcp:
+    image: bifos/dooray-mcp:latest
+    container_name: dooray-mcp-server
+    environment:
+      # Dooray API 설정 (필수)
+      - DOORAY_BASE_URL=${DOORAY_BASE_URL:-https://api.dooray.com}
+      - DOORAY_API_KEY=${DOORAY_API_KEY}
+      - DOORAY_PROJECT_ID=${DOORAY_PROJECT_ID}
+      # JVM 옵션 (선택사항)
+      - JAVA_OPTS=${JAVA_OPTS:--Xms128m -Xmx512m}
+      # 로그 레벨 (선택사항)
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    # MCP는 STDIO 통신이므로 포트 매핑은 필요하지 않음
+    # ports:
+    #   - "8080:8080"
+    
+    # 컨테이너 재시작 정책
+    restart: unless-stopped
+    
+    # 로그 설정
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # 헬스체크
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "java.*app.jar"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 개발용: 로컬 빌드 버전
+  dooray-mcp-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dooray-mcp-dev
+    environment:
+      # Dooray API 설정 (필수)
+      - DOORAY_BASE_URL=${DOORAY_BASE_URL:-https://api.dooray.com}
+      - DOORAY_API_KEY=${DOORAY_API_KEY}
+      - DOORAY_PROJECT_ID=${DOORAY_PROJECT_ID}
+      # JVM 옵션 (선택사항)
+      - JAVA_OPTS=${JAVA_OPTS:--Xms128m -Xmx512m}
+      # 로그 레벨 (선택사항)
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    restart: unless-stopped
+    profiles:
+      - dev 
