@@ -1,106 +1,142 @@
 # Dooray MCP Server
 
-AI 도구를 활용하여 NHN Dooray를 컨트롤할 수 있도록 합니다.
+NHN Dooray 서비스의 MCP(Model Context Protocol) 서버입니다.
 
-## 🚀 빠른 시작
+## 주요 기능
 
-### 🐳 Docker 사용 (권장)
+- **위키 조회**: 접근 가능한 위키 목록 및 페이지 조회
+- **JSON 응답**: 규격화된 JSON 형태의 응답
+- **예외 처리**: 일관된 에러 응답 제공
+- **Docker 지원**: 멀티 플랫폼 Docker 이미지 제공
+
+## 빠른 시작
+
+### 환경변수 설정
+
+다음 환경변수를 설정해야 합니다:
 
 ```bash
-# Docker Hub에서 이미지 다운로드 및 실행
-docker run \
-  -e DOORAY_API_KEY="your_tenant:your_api_token" \
-  -e DOORAY_PROJECT_ID="your_project_id" \
-  bifos/dooray-mcp:latest
-
-# 모든 환경변수 지정
-docker run \
-  -e DOORAY_BASE_URL="https://api.dooray.com" \
-  -e DOORAY_API_KEY="your_tenant:your_api_token" \
-  -e DOORAY_PROJECT_ID="your_project_id" \
-  -e JAVA_OPTS="-Xms256m -Xmx1g" \
-  bifos/dooray-mcp:latest
+export DOORAY_API_KEY="your_api_key"
+export DOORAY_BASE_URL="https://api.dooray.com"
+export DOORAY_PROJECT_ID="your_project_id"
 ```
 
-### 📦 로컬 개발
-
-#### 1. 환경변수 설정
-
-`.env.sample` 파일을 복사하여 `.env` 파일을 생성하고 설정을 수정합니다:
-
-````bash
-# .env.sample을 복사하여 .env 파일 생성
-cp .env.sample .env
-
-**필수 환경변수:**
-
-- `DOORAY_BASE_URL`: Dooray Base URL (https://api.dooray.com)
-- `DOORAY_API_KEY`: Dooray API 키 (tenant:token 형식)
-- `DOORAY_PROJECT_ID`: 프로젝트 ID
-
-#### 2. 로컬 실행
+### 로컬 실행
 
 ```bash
-# 빌드 및 실행 (한 번에)
+# 의존성 설치 및 빌드
+./gradlew clean shadowJar
+
+# 로컬 실행 (.env 파일 사용)
 ./gradlew runLocal
-````
 
-이 명령어는 다음을 수행합니다:
+# 또는 직접 실행
+java -jar build/libs/dooray-mcp-server-0.1.2-all.jar
+```
 
-1. `.env` 파일에서 환경변수 로드
-2. `shadowJar`로 프로젝트 빌드
-3. MCP 서버 실행
-
-## 🐳 Docker 사용법
-
-### Docker Hub에서 사용
+### Docker 실행
 
 ```bash
-# 최신 버전 실행
-docker run -e DOORAY_API_KEY="your_tenant:your_api_token" bifos/dooray-mcp:latest
+# Docker Hub에서 이미지 가져오기
+docker pull bifos/dooray-mcp:latest
 
-# 특정 버전 실행
-docker run -e DOORAY_API_KEY="your_tenant:your_api_token" bifos/dooray-mcp:0.1.1
+# 환경변수와 함께 실행
+docker run -e DOORAY_API_KEY="your_api_key" \
+           -e DOORAY_BASE_URL="https://api.dooray.com" \
+           -e DOORAY_PROJECT_ID="your_project_id" \
+           bifos/dooray-mcp:latest
 ```
 
-**필요한 .env 파일 설정:**
+## 사용 가능한 도구
+
+### 1. get_wikis
+
+접근 가능한 위키 목록을 조회합니다.
+
+**매개변수:**
+
+- `page` (선택): 페이지 번호
+- `size` (선택): 페이지 크기
+
+### 2. get_wiki_pages
+
+특정 프로젝트의 위키 페이지 목록을 조회합니다.
+
+**매개변수:**
+
+- `projectId` (필수): 프로젝트 ID
+- `parentPageId` (선택): 상위 페이지 ID
+
+### 3. get_wiki_page
+
+특정 위키 페이지의 상세 정보를 조회합니다.
+
+**매개변수:**
+
+- `projectId` (필수): 프로젝트 ID
+- `wikiPageId` (필수): 위키 페이지 ID
+
+## 개발
+
+### 테스트 실행
 
 ```bash
-DOORAY_BASE_URL=https://api.dooray.com
-DOORAY_API_KEY=your_tenant:your_api_token
-DOORAY_PROJECT_ID=your_project_id
+# 모든 테스트 실행 (환경변수 있을 때)
+./gradlew test
+
+# CI 환경에서는 통합 테스트 자동 제외
+CI=true ./gradlew test
 ```
 
-### 로컬에서 Docker 이미지 빌드
+### 빌드
 
 ```bash
-# 빌드
-./scripts/docker-build.sh
+# JAR 빌드
+./gradlew clean shadowJar
 
-# Docker Hub에 푸시
-./scripts/docker-push.sh
+# Docker 이미지 빌드
+docker build -t dooray-mcp:local --build-arg VERSION=0.1.2 .
 ```
 
-## 📋 Tools
+## Docker 멀티 플랫폼 빌드
 
-### get_wiki_pages
+### 현재 상태
 
-- **설명**: 특정 프로젝트의 위키 페이지들을 조회합니다
-- **파라미터**:
-  - `projectId` (필수): 프로젝트 ID
-  - `parentPageId` (선택): 상위 페이지 ID (null이면 최상위 페이지들 조회)
+현재 Docker 이미지는 **AMD64만 지원**합니다. ARM64 빌드는 QEMU 에뮬레이션에서 Gradle 의존성 다운로드 단계에서 멈추는 문제가 있어 일시적으로 비활성화되었습니다.
 
-#### 사용 예시
+### ARM64 빌드 활성화
 
-```json
-{
-  "name": "get_wiki_pages",
-  "arguments": {
-    "projectId": "1234567890",
-    "parentPageId": "1234567890"
-  }
-}
+ARM64 빌드를 다시 활성화하려면 `.github/workflows/docker-publish.yml`에서 다음 설정을 변경하세요:
+
+```yaml
+env:
+  ENABLE_ARM64: true # false에서 true로 변경
 ```
+
+### ARM64 빌드 문제 해결 방법
+
+1. **네이티브 ARM64 러너 사용** (권장)
+2. **QEMU 타임아웃 증가**
+3. **Gradle 캐시 최적화**
+4. **의존성 사전 다운로드**
+
+현재는 안정성을 위해 AMD64만 빌드하고 있으며, ARM64 지원은 향후 업데이트에서 제공될 예정입니다.
+
+## 환경변수
+
+| 변수명            | 설명                | 필수 여부 |
+| ----------------- | ------------------- | --------- |
+| DOORAY_API_KEY    | Dooray API 키       | 필수      |
+| DOORAY_BASE_URL   | Dooray API Base URL | 필수      |
+| DOORAY_PROJECT_ID | 기본 프로젝트 ID    | 선택      |
+
+## 라이선스
+
+이 프로젝트는 오픈 소스이며, 자유롭게 사용하실 수 있습니다.
+
+## 기여
+
+프로젝트에 기여하고 싶으시다면 이슈를 등록하거나 풀 리퀘스트를 보내주세요.
 
 ## 📚 참고자료
 

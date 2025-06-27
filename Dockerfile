@@ -4,6 +4,10 @@ FROM gradle:8.10-jdk21 AS builder
 # 작업 디렉토리 설정
 WORKDIR /app
 
+# ARM64 빌드를 위한 JVM 메모리 최적화
+ENV JAVA_OPTS="-Xmx1g -XX:MaxMetaspaceSize=256m"
+ENV GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx1g"
+
 # Gradle 래퍼와 설정 파일 복사
 COPY gradle/ gradle/
 COPY gradlew gradlew.bat gradle.properties settings.gradle.kts ./
@@ -11,13 +15,10 @@ COPY gradlew gradlew.bat gradle.properties settings.gradle.kts ./
 # 빌드 스크립트 복사
 COPY build.gradle.kts ./
 
-# 의존성 다운로드 (캐시 최적화)
-RUN ./gradlew dependencies --no-daemon
-
-# 소스 코드 복사
+# 소스 코드도 함께 복사하여 한 번에 빌드 (ARM64 안정성 향상)
 COPY src/ src/
 
-# shadowJar 빌드
+# 의존성 다운로드와 빌드를 한 번에 수행 (더 안정적)
 RUN ./gradlew clean shadowJar --no-daemon
 
 # 런타임 스테이지

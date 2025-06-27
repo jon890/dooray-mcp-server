@@ -10,6 +10,8 @@ on:
 env:
   REGISTRY: docker.io
   IMAGE_NAME: bifos/dooray-mcp
+  # ARM64 빌드 활성화 여부 (ARM64 빌드에 문제가 있을 때 false로 설정)
+  ENABLE_ARM64: false
 
 jobs:
   test:
@@ -55,6 +57,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+    timeout-minutes: 45
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -85,6 +88,17 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 추출된 버전: $VERSION"
 
+      - name: Set build platforms
+        id: platforms
+        run: |
+          if [ "${{ env.ENABLE_ARM64 }}" = "true" ]; then
+            echo "PLATFORMS=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+            echo "🏗️ AMD64 + ARM64 멀티 플랫폼 빌드"
+          else
+            echo "PLATFORMS=linux/amd64" >> $GITHUB_OUTPUT
+            echo "🏗️ AMD64 단일 플랫폼 빌드 (ARM64 비활성화)"
+          fi
+
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -94,7 +108,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Set up QEMU
+        if: env.ENABLE_ARM64 == 'true'
         uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -111,11 +128,11 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push multi-platform Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ steps.platforms.outputs.PLATFORMS }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
