@@ -10,9 +10,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# 프로젝트 루트로 이동
+cd "$(dirname "$0")/.."
+
 # 변수 설정
 IMAGE_NAME="bifos/dooray-mcp"
-VERSION=$(grep 'version = ' ./build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+# Gradle에서 버전 추출
+VERSION=$(./gradlew properties --no-daemon --console=plain -q | grep "^version:" | awk '{print $2}')
 LATEST_TAG="latest"
 
 echo -e "${BLUE}🚀 Docker Hub에 이미지 푸시 시작${NC}"

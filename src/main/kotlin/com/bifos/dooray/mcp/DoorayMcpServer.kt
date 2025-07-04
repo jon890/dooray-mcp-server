@@ -35,7 +35,7 @@ class DoorayMcpServer {
 
         val server =
             Server(
-                Implementation(name = "dooray-mcp", version = "0.1.2"),
+                Implementation(name = "dooray-mcp", version = "0.1.4"),
                 ServerOptions(
                     capabilities =
                         ServerCapabilities(
