@@ -20,11 +20,20 @@ data class WikiPageDetail(
         val parentPageId: String? = null
 )
 
+/** 위키 페이지 생성 결과 (축약된 정보) */
+@Serializable
+data class CreateWikiPageResult(
+        val id: String,
+        val wikiId: String,
+        val parentPageId: String? = null,
+        val version: Int
+)
+
 /** 위키 페이지 생성 요청 */
 @Serializable
 data class CreateWikiPageRequest(
         val subject: String,
-        val body: String,
+        val body: WikiPageBody,
         val parentPageId: String? = null
 )
 
@@ -32,40 +41,15 @@ data class CreateWikiPageRequest(
 @Serializable
 data class UpdateWikiPageRequest(
         val subject: String? = null,
-        val body: String? = null,
+        val body: WikiPageBody? = null,
         val parentPageId: String? = null
 )
 
-/** 위키 페이지 버전 정보 */
-@Serializable
-data class WikiPageVersion(
-        val version: Int,
-        val creator: Creator,
-        val createdAt: String,
-        val subject: String
-)
-
-/** 위키 검색 결과 */
-@Serializable
-data class WikiSearchResult(
-        val id: String,
-        val wikiId: String,
-        val version: Int,
-        val subject: String,
-        val body: String? = null,
-        val creator: Creator,
-        val createdAt: String? = null,
-        val updatedAt: String? = null
-)
-
-/** 위키 검색 응답 */
-@Serializable data class WikiSearchData(val totalCount: Int, val posts: List<WikiSearchResult>)
+/** 위키 참조자 정보 */
+@Serializable data class WikiReferrer(val type: String = "member", val member: Member)
 
 /** 위키 페이지 상세 응답 타입 */
 typealias WikiPageResponse = DoorayApiResponse<WikiPageDetail>
 
-/** 위키 페이지 버전 목록 응답 타입 */
-typealias WikiPageVersionsResponse = DoorayApiResponse<List<WikiPageVersion>>
-
-/** 위키 검색 응답 타입 */
-typealias WikiSearchResponse = DoorayApiResponse<WikiSearchData>
+/** 위키 페이지 생성 응답 타입 */
+typealias CreateWikiPageResponse = DoorayApiResponse<CreateWikiPageResult>

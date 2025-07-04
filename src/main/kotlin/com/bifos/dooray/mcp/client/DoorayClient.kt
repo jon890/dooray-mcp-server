@@ -17,33 +17,97 @@ interface DoorayClient {
     suspend fun getWikiPage(projectId: String, pageId: String): WikiPageResponse
 
     /** 새로운 위키 페이지를 생성합니다. */
-    suspend fun createWikiPage(projectId: String, request: CreateWikiPageRequest): WikiPageResponse
+    suspend fun createWikiPage(
+            wikiId: String,
+            request: CreateWikiPageRequest
+    ): CreateWikiPageResponse
 
     /** 위키 페이지를 수정합니다. */
     suspend fun updateWikiPage(
-        projectId: String,
-        pageId: String,
-        request: UpdateWikiPageRequest
+            wikiId: String,
+            pageId: String,
+            request: UpdateWikiPageRequest
     ): WikiPageResponse
 
-    /** 위키 페이지를 삭제합니다. */
-    suspend fun deleteWikiPage(projectId: String, pageId: String): DoorayApiResponse<Unit>
+    /** 위키 페이지 제목만 수정합니다. */
+    suspend fun updateWikiPageTitle(
+            wikiId: String,
+            pageId: String,
+            subject: String
+    ): DoorayApiUnitResponse
 
-    /** 위키 페이지의 버전 히스토리를 조회합니다. */
-    suspend fun getWikiPageVersions(projectId: String, pageId: String): WikiPageVersionsResponse
+    /** 위키 페이지 내용만 수정합니다. */
+    suspend fun updateWikiPageContent(
+            wikiId: String,
+            pageId: String,
+            body: String
+    ): DoorayApiUnitResponse
 
-    /** 특정 버전의 위키 페이지를 조회합니다. */
-    suspend fun getWikiPageVersion(
-        projectId: String,
-        pageId: String,
-        version: Int
-    ): WikiPageResponse
+    /** 위키 페이지 참조자를 수정합니다. */
+    suspend fun updateWikiPageReferrers(
+            wikiId: String,
+            pageId: String,
+            referrers: List<WikiReferrer>
+    ): DoorayApiUnitResponse
 
-    /** 위키 페이지를 검색합니다. */
-    suspend fun searchWikiPages(
-        projectId: String,
-        query: String,
-        size: Int? = null,
-        page: Int? = null
-    ): WikiSearchResponse
+    // ============ 프로젝트 업무 관련 API ============
+
+    /** 프로젝트 내에 업무를 생성합니다. */
+    suspend fun createPost(projectId: String, request: CreatePostRequest): CreatePostApiResponse
+
+    /** 업무 목록을 조회합니다. */
+    suspend fun getPosts(
+            projectId: String,
+            page: Int? = null,
+            size: Int? = null,
+            fromMemberIds: List<String>? = null,
+            toMemberIds: List<String>? = null,
+            ccMemberIds: List<String>? = null,
+            tagIds: List<String>? = null,
+            parentPostId: String? = null,
+            postNumber: String? = null,
+            postWorkflowClasses: List<String>? = null,
+            postWorkflowIds: List<String>? = null,
+            milestoneIds: List<String>? = null,
+            subjects: String? = null,
+            createdAt: String? = null,
+            updatedAt: String? = null,
+            dueAt: String? = null,
+            order: String? = null
+    ): PostListResponse
+
+    /** 업무 상세 정보를 조회합니다. */
+    suspend fun getPost(projectId: String, postId: String): PostDetailResponse
+
+    /** 업무를 수정합니다. */
+    suspend fun updatePost(
+            projectId: String,
+            postId: String,
+            request: UpdatePostRequest
+    ): UpdatePostResponse
+
+    /** 특정 담당자의 상태를 변경합니다. */
+    suspend fun updatePostUserWorkflow(
+            projectId: String,
+            postId: String,
+            organizationMemberId: String,
+            workflowId: String
+    ): DoorayApiUnitResponse
+
+    /** 업무 전체의 상태를 변경합니다. */
+    suspend fun setPostWorkflow(
+            projectId: String,
+            postId: String,
+            workflowId: String
+    ): DoorayApiUnitResponse
+
+    /** 업무 상태를 완료로 변경합니다. */
+    suspend fun setPostDone(projectId: String, postId: String): DoorayApiUnitResponse
+
+    /** 업무의 상위 업무를 설정합니다. */
+    suspend fun setPostParent(
+            projectId: String,
+            postId: String,
+            parentPostId: String
+    ): DoorayApiUnitResponse
 }

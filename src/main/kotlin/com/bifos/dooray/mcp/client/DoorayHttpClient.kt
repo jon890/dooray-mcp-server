@@ -14,7 +14,8 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
-class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: String) : DoorayClient {
+class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: String) :
+        DoorayClient {
 
     private val log = LoggerFactory.getLogger(DoorayHttpClient::class.java)
     private val httpClient: HttpClient
@@ -34,10 +35,10 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
             // install content negotiation plugin for JSON serialization/deserialization
             install(ContentNegotiation) {
                 json(
-                    Json {
-                        ignoreUnknownKeys = true
-                        prettyPrint = true
-                    }
+                        Json {
+                            ignoreUnknownKeys = true
+                            prettyPrint = true
+                        }
                 )
             }
 
@@ -57,10 +58,10 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
      * @param apiCall 실제 HTTP 호출을 수행하는 lambda
      */
     private suspend inline fun <reified T> executeApiCall(
-        operation: String,
-        expectedStatusCode: HttpStatusCode = HttpStatusCode.OK,
-        successMessage: String? = null,
-        crossinline apiCall: suspend () -> HttpResponse
+            operation: String,
+            expectedStatusCode: HttpStatusCode = HttpStatusCode.OK,
+            successMessage: String? = null,
+            crossinline apiCall: suspend () -> HttpResponse
     ): T {
         try {
             log.info("🔗 API 요청: $operation")
@@ -73,7 +74,6 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
                     log.info(successMessage ?: "✅ API 호출 성공")
                     result
                 }
-
                 else -> {
                     handleErrorResponse(response)
                 }
@@ -113,13 +113,13 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
         throw CustomException(errorMessage, null, e)
     }
 
-    /** DELETE 요청과 같이 응답 본문이 없는 경우를 위한 특별 처리 */
-    private suspend fun executeApiCallWithoutBody(
-        operation: String,
-        expectedStatusCode: HttpStatusCode = HttpStatusCode.NoContent,
-        successMessage: String,
-        apiCall: suspend () -> HttpResponse
-    ): DoorayApiResponse<Unit> {
+    /** result가 null일 수 있는 API 호출을 위한 특별 처리 */
+    private suspend fun executeApiCallForNullableResult(
+            operation: String,
+            expectedStatusCode: HttpStatusCode = HttpStatusCode.OK,
+            successMessage: String,
+            apiCall: suspend () -> HttpResponse
+    ): DoorayApiUnitResponse {
         try {
             log.info("🔗 API 요청: $operation")
             val response = apiCall()
@@ -127,10 +127,15 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
 
             return when (response.status) {
                 expectedStatusCode -> {
-                    log.info(successMessage)
-                    DoorayApiResponse(DoorayApiHeader(true, expectedStatusCode.value, "성공"), Unit)
+                    // result가 null일 수 있는 응답을 파싱
+                    val jsonResponse = response.body<DoorayApiUnitResponse>()
+                    if (jsonResponse.header.isSuccessful) {
+                        log.info(successMessage)
+                    } else {
+                        log.warn("⚠️ API 응답 에러: ${jsonResponse.header.resultMessage}")
+                    }
+                    jsonResponse
                 }
-
                 else -> {
                     handleErrorResponse(response)
                 }
@@ -153,15 +158,15 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
 
     override suspend fun getWikiPages(projectId: String): WikiPagesResponse {
         return executeApiCall(
-            operation = "GET /wiki/v1/wikis/$projectId/pages",
-            successMessage = "✅ 위키 페이지 목록 조회 성공"
+                operation = "GET /wiki/v1/wikis/$projectId/pages",
+                successMessage = "✅ 위키 페이지 목록 조회 성공"
         ) { httpClient.get("/wiki/v1/wikis/$projectId/pages") }
     }
 
     override suspend fun getWikiPages(projectId: String, parentPageId: String): WikiPagesResponse {
         return executeApiCall(
-            operation = "GET /wiki/v1/wikis/$projectId/pages?parentPageId=$parentPageId",
-            successMessage = "✅ 자식 위키 페이지 목록 조회 성공"
+                operation = "GET /wiki/v1/wikis/$projectId/pages?parentPageId=$parentPageId",
+                successMessage = "✅ 자식 위키 페이지 목록 조회 성공"
         ) {
             httpClient.get("/wiki/v1/wikis/$projectId/pages") {
                 parameter("parentPageId", parentPageId)
@@ -171,78 +176,215 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
 
     override suspend fun getWikiPage(projectId: String, pageId: String): WikiPageResponse {
         return executeApiCall(
-            operation = "GET /wiki/v1/wikis/$projectId/pages/$pageId",
-            successMessage = "✅ 위키 페이지 조회 성공"
+                operation = "GET /wiki/v1/wikis/$projectId/pages/$pageId",
+                successMessage = "✅ 위키 페이지 조회 성공"
         ) { httpClient.get("/wiki/v1/wikis/$projectId/pages/$pageId") }
     }
 
     override suspend fun createWikiPage(
-        projectId: String,
-        request: CreateWikiPageRequest
-    ): WikiPageResponse {
+            wikiId: String,
+            request: CreateWikiPageRequest
+    ): CreateWikiPageResponse {
         return executeApiCall(
-            operation = "POST /wiki/v1/wikis/$projectId/pages",
-            expectedStatusCode = HttpStatusCode.Created,
-            successMessage = "✅ 위키 페이지 생성 성공"
-        ) { httpClient.post("/wiki/v1/wikis/$projectId/pages") { setBody(request) } }
+                operation = "POST /wiki/v1/wikis/$wikiId/pages",
+                expectedStatusCode = HttpStatusCode.Created,
+                successMessage = "✅ 위키 페이지 생성 성공"
+        ) { httpClient.post("/wiki/v1/wikis/$wikiId/pages") { setBody(request) } }
     }
 
     override suspend fun updateWikiPage(
-        projectId: String,
-        pageId: String,
-        request: UpdateWikiPageRequest
+            wikiId: String,
+            pageId: String,
+            request: UpdateWikiPageRequest
     ): WikiPageResponse {
         return executeApiCall(
-            operation = "PUT /wiki/v1/wikis/$projectId/pages/$pageId",
-            successMessage = "✅ 위키 페이지 수정 성공"
-        ) { httpClient.put("/wiki/v1/wikis/$projectId/pages/$pageId") { setBody(request) } }
+                operation = "PUT /wiki/v1/wikis/$wikiId/pages/$pageId",
+                successMessage = "✅ 위키 페이지 수정 성공"
+        ) { httpClient.put("/wiki/v1/wikis/$wikiId/pages/$pageId") { setBody(request) } }
     }
 
-    override suspend fun deleteWikiPage(
-        projectId: String,
-        pageId: String
-    ): DoorayApiResponse<Unit> {
-        return executeApiCallWithoutBody(
-            operation = "DELETE /wiki/v1/wikis/$projectId/pages/$pageId",
-            successMessage = "✅ 위키 페이지 삭제 성공"
-        ) { httpClient.delete("/wiki/v1/wikis/$projectId/pages/$pageId") }
-    }
-
-    override suspend fun getWikiPageVersions(
-        projectId: String,
-        pageId: String
-    ): WikiPageVersionsResponse {
-        return executeApiCall(
-            operation = "GET /wiki/v1/wikis/$projectId/pages/$pageId/versions",
-            successMessage = "✅ 위키 페이지 버전 목록 조회 성공"
-        ) { httpClient.get("/wiki/v1/wikis/$projectId/pages/$pageId/versions") }
-    }
-
-    override suspend fun getWikiPageVersion(
-        projectId: String,
-        pageId: String,
-        version: Int
-    ): WikiPageResponse {
-        return executeApiCall(
-            operation = "GET /wiki/v1/wikis/$projectId/pages/$pageId/versions/$version",
-            successMessage = "✅ 위키 페이지 버전 조회 성공"
-        ) { httpClient.get("/wiki/v1/wikis/$projectId/pages/$pageId/versions/$version") }
-    }
-
-    override suspend fun searchWikiPages(
-        projectId: String,
-        query: String,
-        size: Int?,
-        page: Int?
-    ): WikiSearchResponse {
-        return executeApiCall(
-            operation = "GET /wiki/v1/wikis/$projectId/pages/search?q=$query",
-            successMessage = "✅ 위키 페이지 검색 성공"
+    override suspend fun updateWikiPageTitle(
+            wikiId: String,
+            pageId: String,
+            subject: String
+    ): DoorayApiUnitResponse {
+        return executeApiCallForNullableResult(
+                operation = "PUT /wiki/v1/wikis/$wikiId/pages/$pageId/title",
+                successMessage = "✅ 위키 페이지 제목 수정 성공"
         ) {
-            httpClient.get("/wiki/v1/wikis/$projectId/pages/search") {
-                parameter("q", query)
-                size?.let { parameter("size", it) }
+            httpClient.put("/wiki/v1/wikis/$wikiId/pages/$pageId/title") {
+                setBody(mapOf("subject" to subject))
+            }
+        }
+    }
+
+    override suspend fun updateWikiPageContent(
+            wikiId: String,
+            pageId: String,
+            body: String
+    ): DoorayApiUnitResponse {
+        return executeApiCallForNullableResult(
+                operation = "PUT /wiki/v1/wikis/$wikiId/pages/$pageId/content",
+                successMessage = "✅ 위키 페이지 내용 수정 성공"
+        ) {
+            httpClient.put("/wiki/v1/wikis/$wikiId/pages/$pageId/content") {
+                setBody(mapOf("body" to mapOf("mimeType" to "text/x-markdown", "content" to body)))
+            }
+        }
+    }
+
+    override suspend fun updateWikiPageReferrers(
+            wikiId: String,
+            pageId: String,
+            referrers: List<WikiReferrer>
+    ): DoorayApiUnitResponse {
+        return executeApiCallForNullableResult(
+                operation = "PUT /wiki/v1/wikis/$wikiId/pages/$pageId/referrers",
+                successMessage = "✅ 위키 페이지 참조자 수정 성공"
+        ) {
+            httpClient.put("/wiki/v1/wikis/$wikiId/pages/$pageId/referrers") {
+                setBody(mapOf("referrers" to referrers))
+            }
+        }
+    }
+
+    // ============ 프로젝트 업무 관련 API 구현 ============
+
+    override suspend fun createPost(
+            projectId: String,
+            request: CreatePostRequest
+    ): CreatePostApiResponse {
+        return executeApiCall(
+                operation = "POST /project/v1/projects/$projectId/posts",
+                expectedStatusCode = HttpStatusCode.OK,
+                successMessage = "✅ 업무 생성 성공"
+        ) { httpClient.post("/project/v1/projects/$projectId/posts") { setBody(request) } }
+    }
+
+    override suspend fun getPosts(
+            projectId: String,
+            page: Int?,
+            size: Int?,
+            fromMemberIds: List<String>?,
+            toMemberIds: List<String>?,
+            ccMemberIds: List<String>?,
+            tagIds: List<String>?,
+            parentPostId: String?,
+            postNumber: String?,
+            postWorkflowClasses: List<String>?,
+            postWorkflowIds: List<String>?,
+            milestoneIds: List<String>?,
+            subjects: String?,
+            createdAt: String?,
+            updatedAt: String?,
+            dueAt: String?,
+            order: String?
+    ): PostListResponse {
+        return executeApiCall(
+                operation = "GET /project/v1/projects/$projectId/posts",
+                successMessage = "✅ 업무 목록 조회 성공"
+        ) {
+            httpClient.get("/project/v1/projects/$projectId/posts") {
                 page?.let { parameter("page", it) }
+                size?.let { parameter("size", it) }
+                fromMemberIds?.let {
+                    if (it.isNotEmpty()) parameter("fromMemberIds", it.joinToString(","))
+                }
+                toMemberIds?.let {
+                    if (it.isNotEmpty()) parameter("toMemberIds", it.joinToString(","))
+                }
+                ccMemberIds?.let {
+                    if (it.isNotEmpty()) parameter("ccMemberIds", it.joinToString(","))
+                }
+                tagIds?.let { if (it.isNotEmpty()) parameter("tagIds", it.joinToString(",")) }
+                parentPostId?.let { parameter("parentPostId", it) }
+                postNumber?.let { parameter("postNumber", it) }
+                postWorkflowClasses?.let {
+                    if (it.isNotEmpty()) parameter("postWorkflowClasses", it.joinToString(","))
+                }
+                postWorkflowIds?.let {
+                    if (it.isNotEmpty()) parameter("postWorkflowIds", it.joinToString(","))
+                }
+                milestoneIds?.let {
+                    if (it.isNotEmpty()) parameter("milestoneIds", it.joinToString(","))
+                }
+                subjects?.let { parameter("subjects", it) }
+                createdAt?.let { parameter("createdAt", it) }
+                updatedAt?.let { parameter("updatedAt", it) }
+                dueAt?.let { parameter("dueAt", it) }
+                order?.let { parameter("order", it) }
+            }
+        }
+    }
+
+    override suspend fun getPost(projectId: String, postId: String): PostDetailResponse {
+        return executeApiCall(
+                operation = "GET /project/v1/projects/$projectId/posts/$postId",
+                successMessage = "✅ 업무 상세 조회 성공"
+        ) { httpClient.get("/project/v1/projects/$projectId/posts/$postId") }
+    }
+
+    override suspend fun updatePost(
+            projectId: String,
+            postId: String,
+            request: UpdatePostRequest
+    ): UpdatePostResponse {
+        return executeApiCall(
+                operation = "PUT /project/v1/projects/$projectId/posts/$postId",
+                successMessage = "✅ 업무 수정 성공"
+        ) { httpClient.put("/project/v1/projects/$projectId/posts/$postId") { setBody(request) } }
+    }
+
+    override suspend fun updatePostUserWorkflow(
+            projectId: String,
+            postId: String,
+            organizationMemberId: String,
+            workflowId: String
+    ): DoorayApiUnitResponse {
+        return executeApiCallForNullableResult(
+                operation =
+                        "PUT /project/v1/projects/$projectId/posts/$postId/to/$organizationMemberId",
+                successMessage = "✅ 담당자 상태 변경 성공"
+        ) {
+            httpClient.put(
+                    "/project/v1/projects/$projectId/posts/$postId/to/$organizationMemberId"
+            ) { setBody(SetWorkflowRequest(workflowId)) }
+        }
+    }
+
+    override suspend fun setPostWorkflow(
+            projectId: String,
+            postId: String,
+            workflowId: String
+    ): DoorayApiUnitResponse {
+        return executeApiCallForNullableResult(
+                operation = "POST /project/v1/projects/$projectId/posts/$postId/set-workflow",
+                successMessage = "✅ 업무 상태 변경 성공"
+        ) {
+            httpClient.post("/project/v1/projects/$projectId/posts/$postId/set-workflow") {
+                setBody(SetWorkflowRequest(workflowId))
+            }
+        }
+    }
+
+    override suspend fun setPostDone(projectId: String, postId: String): DoorayApiUnitResponse {
+        return executeApiCallForNullableResult(
+                operation = "POST /project/v1/projects/$projectId/posts/$postId/set-done",
+                successMessage = "✅ 업무 완료 처리 성공"
+        ) { httpClient.post("/project/v1/projects/$projectId/posts/$postId/set-done") }
+    }
+
+    override suspend fun setPostParent(
+            projectId: String,
+            postId: String,
+            parentPostId: String
+    ): DoorayApiUnitResponse {
+        return executeApiCallForNullableResult(
+                operation = "POST /project/v1/projects/$projectId/posts/$postId/set-parent-post",
+                successMessage = "✅ 상위 업무 설정 성공"
+        ) {
+            httpClient.post("/project/v1/projects/$projectId/posts/$postId/set-parent-post") {
+                setBody(SetParentPostRequest(parentPostId))
             }
         }
     }

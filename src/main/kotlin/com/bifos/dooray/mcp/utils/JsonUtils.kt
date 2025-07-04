@@ -1,6 +1,8 @@
 package com.bifos.dooray.mcp.utils
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.jsonPrimitive
 
 object JsonUtils {
 
@@ -16,5 +18,16 @@ object JsonUtils {
 
     inline fun <reified T> fromJsonString(jsonString: String): T {
         return json.decodeFromString(jsonString)
+    }
+
+    /** JSON 배열 문자열을 문자열 리스트로 파싱합니다. 예: ["item1", "item2"] -> listOf("item1", "item2") */
+    fun parseStringArray(jsonArrayString: String): List<String> {
+        return try {
+            val jsonArray = json.parseToJsonElement(jsonArrayString) as JsonArray
+            jsonArray.map { it.jsonPrimitive.content }
+        } catch (e: Exception) {
+            // 파싱 실패 시 빈 리스트 반환
+            emptyList()
+        }
     }
 }
