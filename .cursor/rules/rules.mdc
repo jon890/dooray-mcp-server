@@ -80,12 +80,12 @@ private suspend inline fun <reified T> executeApiCall(
     crossinline apiCall: suspend () -> HttpResponse
 ): T
 
-private suspend fun executeApiCallWithoutBody(
+private suspend fun executeApiCallForNullableResult(
     operation: String,
-    expectedStatusCode: HttpStatusCode = HttpStatusCode.NoContent,
+    expectedStatusCode: HttpStatusCode = HttpStatusCode.OK,
     successMessage: String,
     apiCall: suspend () -> HttpResponse
-): DoorayApiResponse<Unit>
+): DoorayApiUnitResponse
 ```
 
 #### 예시:
@@ -388,7 +388,7 @@ class DoorayHttpClientIntegrationTest {
 # 직접 실행 (환경변수 필요)
 export DOORAY_API_KEY="your_api_key"
 export DOORAY_BASE_URL="https://api.dooray.com"
-java -jar build/libs/dooray-mcp-server-0.1.2-all.jar
+java -jar build/libs/dooray-mcp-server-0.1.5-all.jar
 ```
 
 ### 테스트 환경 설정
