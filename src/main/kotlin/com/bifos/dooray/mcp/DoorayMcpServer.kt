@@ -3,6 +3,7 @@ package com.bifos.dooray.mcp
 import com.bifos.dooray.mcp.client.DoorayHttpClient
 import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_API_KEY
 import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_BASE_URL
+import com.bifos.dooray.mcp.constants.VersionConst
 import com.bifos.dooray.mcp.tools.*
 import io.ktor.utils.io.streams.*
 import io.modelcontextprotocol.kotlin.sdk.Implementation
@@ -35,7 +36,7 @@ class DoorayMcpServer {
 
         val server =
                 Server(
-                        Implementation(name = "dooray-mcp", version = "0.1.4"),
+                        Implementation(name = "dooray-mcp-server", version = VersionConst.VERSION),
                         ServerOptions(
                                 capabilities =
                                         ServerCapabilities(

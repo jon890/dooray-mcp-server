@@ -10,15 +10,15 @@ application {
 }
 
 group = "com.bifos.dooray.mcp"
-version = "0.1.4"
+version = project.findProperty("project.version") as String? ?: "0.1.5"
 
 repositories {
     mavenCentral()
 }
 
-val mcpVersion = "0.5.0"
-val ktorVersion = "3.1.1"
-val logbackVersion = "1.5.18"
+val mcpVersion = project.findProperty("mcp.version") as String? ?: "0.5.0"
+val ktorVersion = project.findProperty("ktor.version") as String? ?: "3.1.1"
+val logbackVersion = project.findProperty("logback.version") as String? ?: "1.5.18"
 
 dependencies {
     implementation("io.modelcontextprotocol:kotlin-sdk:${mcpVersion}")

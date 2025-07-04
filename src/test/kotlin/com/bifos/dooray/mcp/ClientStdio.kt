@@ -1,5 +1,6 @@
 package com.bifos.dooray.mcp
 
+import com.bifos.dooray.mcp.constants.VersionConst
 import io.modelcontextprotocol.kotlin.sdk.Implementation
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.client.StdioClientTransport
@@ -12,7 +13,7 @@ import kotlinx.io.buffered
 fun main(): Unit = runBlocking {
     val env = parseEnv()
 
-    val processBuilder = ProcessBuilder("java", "-jar", "build/libs/dooray-mcp-server-0.1.0-all.jar")
+    val processBuilder = ProcessBuilder("java", "-jar", "build/libs/dooray-mcp-server-${VersionConst.VERSION}-all.jar")
     processBuilder.environment().putAll(env)
     val process = processBuilder.start()
 
@@ -23,7 +24,7 @@ fun main(): Unit = runBlocking {
 
     // Initialize the MCP client with client information
     val client = Client(
-        clientInfo = Implementation(name = "Dooray MCP Server", version = "0.1.0"),
+        clientInfo = Implementation(name = "Dooray MCP Client", version = "0.1.0"),
     )
 
     client.connect(transport)
