@@ -429,6 +429,262 @@ class DoorayHttpClientIntegrationTest {
         println("✅ 업무 완료 처리 테스트 완료")
     }
 
+    // === 프로젝트 관련 테스트 ===
+
+    @Test
+    @DisplayName("내가 접근할 수 있는 프로젝트 목록이 조회된다")
+    fun getProjectsTest() = runTest {
+        // when - 기본 조회 (권장 파라미터 사용)
+        val response =
+                doorayClient.getProjects(
+                        page = 0,
+                        size = 100,
+                        type = "public",
+                        scope = "private",
+                        state = "active"
+                )
+
+        // then
+        assertAll(
+                { assertTrue { response.header.isSuccessful } },
+                { assertEquals(response.header.resultCode, 0) }
+        )
+
+        response.result.let { projects ->
+            assertTrue { projects.isNotEmpty() }
+            projects.forEach { project ->
+                assertNotNull(project.id)
+                assertNotNull(project.code)
+                // description은 nullable이므로 검증하지 않음
+                println("  - 프로젝트: ${project.code} (ID: ${project.id})")
+            }
+        }
+        println("✅ 프로젝트 목록 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
+    }
+
+    @Test
+    @DisplayName("프로젝트 목록을 기본 파라미터로 조회한다")
+    fun getProjectsWithDefaultParametersTest() = runTest {
+        // when - 파라미터 없이 기본값으로 조회
+        val response = doorayClient.getProjects()
+
+        // then
+        assertAll(
+                { assertTrue { response.header.isSuccessful } },
+                { assertEquals(response.header.resultCode, 0) }
+        )
+
+        println("✅ 기본 파라미터 프로젝트 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
+
+        response.result.forEach { project ->
+            assertNotNull(project.id)
+            assertNotNull(project.code)
+            println("  - 프로젝트: ${project.code} (scope: ${project.scope}, state: ${project.state})")
+        }
+    }
+
+    @Test
+    @DisplayName("활성화된 프로젝트만 필터링해서 조회한다")
+    fun getActiveProjectsTest() = runTest {
+        // when - 활성화된 프로젝트만 조회
+        val response = doorayClient.getProjects(state = "active", size = 50)
+
+        // then
+        assertAll(
+                { assertTrue { response.header.isSuccessful } },
+                { assertEquals(response.header.resultCode, 0) }
+        )
+
+        println("✅ 활성화된 프로젝트 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
+
+        response.result.forEach { project ->
+            assertNotNull(project.id)
+            assertNotNull(project.code)
+            // state가 설정되어 있다면 active여야 함
+            project.state?.let { state ->
+                assertEquals("active", state, "필터링된 프로젝트는 모두 active 상태여야 함")
+            }
+            println("  - 활성 프로젝트: ${project.code} (state: ${project.state})")
+        }
+    }
+
+    @Test
+    @DisplayName("보관된 프로젝트를 조회한다")
+    fun getArchivedProjectsTest() = runTest {
+        // when - 보관된 프로젝트 조회
+        val response = doorayClient.getProjects(state = "archived", size = 20)
+
+        // then
+        assertAll(
+                { assertTrue { response.header.isSuccessful } },
+                { assertEquals(response.header.resultCode, 0) }
+        )
+
+        println("✅ 보관된 프로젝트 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
+
+        if (response.result.isNotEmpty()) {
+            response.result.forEach { project ->
+                assertNotNull(project.id)
+                assertNotNull(project.code)
+                // state가 설정되어 있다면 archived여야 함
+                project.state?.let { state ->
+                    assertEquals("archived", state, "필터링된 프로젝트는 모두 archived 상태여야 함")
+                }
+                println("  - 보관된 프로젝트: ${project.code} (state: ${project.state})")
+            }
+        } else {
+            println("ℹ️ 보관된 프로젝트가 없습니다.")
+        }
+    }
+
+    @Test
+    @DisplayName("공개 범위 프로젝트를 조회한다")
+    fun getPublicScopeProjectsTest() = runTest {
+        // when - 공개 범위 프로젝트 조회
+        val response = doorayClient.getProjects(scope = "public", size = 30)
+
+        // then
+        assertAll(
+                { assertTrue { response.header.isSuccessful } },
+                { assertEquals(response.header.resultCode, 0) }
+        )
+
+        println("✅ 공개 범위 프로젝트 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
+
+        response.result.forEach { project ->
+            assertNotNull(project.id)
+            assertNotNull(project.code)
+            // scope가 설정되어 있다면 public이어야 함
+            project.scope?.let { scope ->
+                assertEquals("public", scope, "필터링된 프로젝트는 모두 public 범위여야 함")
+            }
+            println("  - 공개 프로젝트: ${project.code} (scope: ${project.scope})")
+        }
+    }
+
+    @Test
+    @DisplayName("개인 프로젝트를 포함해서 조회한다")
+    fun getProjectsWithPrivateTypeTest() = runTest {
+        // when - 개인 프로젝트 포함 조회
+        val response = doorayClient.getProjects(type = "private", size = 20)
+
+        // then
+        assertAll(
+                { assertTrue { response.header.isSuccessful } },
+                { assertEquals(response.header.resultCode, 0) }
+        )
+
+        println("✅ 개인 프로젝트 포함 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
+
+        if (response.result.isNotEmpty()) {
+            response.result.forEach { project ->
+                assertNotNull(project.id)
+                assertNotNull(project.code)
+                println("  - 프로젝트: ${project.code} (type: ${project.type})")
+            }
+
+            // 개인 프로젝트가 포함되어 있는지 확인
+            val hasPrivateProject = response.result.any { it.type == "private" }
+            if (hasPrivateProject) {
+                println("ℹ️ 개인 프로젝트가 포함되어 있습니다.")
+            } else {
+                println("ℹ️ 개인 프로젝트가 없거나 응답에 포함되지 않았습니다.")
+            }
+        } else {
+            println("ℹ️ 조회된 프로젝트가 없습니다.")
+        }
+    }
+
+    @Test
+    @DisplayName("페이징을 사용해서 프로젝트를 조회한다")
+    fun getProjectsWithPagingTest() = runTest {
+        // when - 첫 번째 페이지 (작은 사이즈로)
+        val firstPageResponse = doorayClient.getProjects(page = 0, size = 5, state = "active")
+
+        // then
+        assertAll(
+                { assertTrue { firstPageResponse.header.isSuccessful } },
+                { assertEquals(firstPageResponse.header.resultCode, 0) }
+        )
+
+        println(
+                "✅ 첫 번째 페이지 조회 성공: 총 ${firstPageResponse.totalCount}개 중 ${firstPageResponse.result.size}개 조회"
+        )
+
+        // 총 개수가 5개보다 많다면 두 번째 페이지도 조회
+        if (firstPageResponse.totalCount > 5) {
+            val secondPageResponse = doorayClient.getProjects(page = 1, size = 5, state = "active")
+
+            assertAll(
+                    { assertTrue { secondPageResponse.header.isSuccessful } },
+                    { assertEquals(secondPageResponse.header.resultCode, 0) }
+            )
+
+            println("✅ 두 번째 페이지 조회 성공: ${secondPageResponse.result.size}개 조회")
+
+            // 첫 번째 페이지와 두 번째 페이지의 프로젝트가 다른지 확인
+            val firstPageIds = firstPageResponse.result.map { it.id }.toSet()
+            val secondPageIds = secondPageResponse.result.map { it.id }.toSet()
+            val hasOverlap = firstPageIds.intersect(secondPageIds).isNotEmpty()
+
+            if (!hasOverlap && secondPageResponse.result.isNotEmpty()) {
+                println("✅ 페이징이 올바르게 작동합니다 (중복 없음)")
+            } else {
+                println("ℹ️ 페이징 결과에 중복이 있거나 두 번째 페이지가 비어있습니다.")
+            }
+        } else {
+            println("ℹ️ 총 프로젝트 수가 5개 이하라서 두 번째 페이지 테스트를 건너뜁니다.")
+        }
+    }
+
+    @Test
+    @DisplayName("프로젝트 조회 결과에 위키 정보가 포함되어 있다")
+    fun getProjectsWithWikiInfoTest() = runTest {
+        // when
+        val response = doorayClient.getProjects(size = 10, state = "active")
+
+        // then
+        assertAll(
+                { assertTrue { response.header.isSuccessful } },
+                { assertEquals(response.header.resultCode, 0) }
+        )
+
+        println("✅ 프로젝트 위키 정보 조회 성공: ${response.result.size}개")
+
+        response.result.forEach { project ->
+            assertNotNull(project.id)
+            assertNotNull(project.code)
+
+            // 위키 정보가 있는 프로젝트들 확인
+            project.wiki?.let { wiki ->
+                if (wiki.id != null) {
+                    println("  - 프로젝트: ${project.code}, 위키 ID: ${wiki.id}")
+                } else {
+                    println("  - 프로젝트: ${project.code}, 위키 객체 있음 (ID: null)")
+                }
+            }
+                    ?: run { println("  - 프로젝트: ${project.code}, 위키 없음") }
+
+            // 조직 정보 확인
+            project.organization?.let { org ->
+                if (org.id != null) {
+                    println("    조직 ID: ${org.id}")
+                } else {
+                    println("    조직 객체 있음 (ID: null)")
+                }
+            }
+
+            // 드라이브 정보 확인
+            project.drive?.let { drive ->
+                if (drive.id != null) {
+                    println("    드라이브 ID: ${drive.id}")
+                } else {
+                    println("    드라이브 객체 있음 (ID: null)")
+                }
+            }
+        }
+    }
+
     // 테스트 후 정리 작업
     private suspend fun cleanupCreatedData() {
         // 생성된 위키 페이지들은 삭제 API가 지원되지 않으므로 로그만 출력

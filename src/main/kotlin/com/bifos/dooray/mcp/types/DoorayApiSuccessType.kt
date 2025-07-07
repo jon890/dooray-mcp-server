@@ -18,3 +18,31 @@ data class DoorayApiHeader(
         val resultCode: Int,
         val resultMessage: String
 )
+
+@Serializable data class ProjectOrganization(val id: String?)
+
+@Serializable data class ProjectDrive(val id: String?)
+
+@Serializable data class ProjectWiki(val id: String?)
+
+@Serializable
+data class Project(
+        val id: String,
+        val code: String,
+        val description: String? = null,
+        val state: String? = null,
+        val scope: String? = null,
+        val type: String? = null,
+        val organization: ProjectOrganization? = null,
+        val drive: ProjectDrive? = null,
+        val wiki: ProjectWiki? = null
+)
+
+@Serializable data class ProjectListResult(val result: List<Project>, val totalCount: Int)
+
+@Serializable
+data class ProjectListResponse(
+        val header: DoorayApiHeader,
+        val result: List<Project>,
+        val totalCount: Int
+)

@@ -2,7 +2,9 @@ package com.bifos.dooray.mcp.utils
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.serializer
 
 object JsonUtils {
 
@@ -18,6 +20,10 @@ object JsonUtils {
 
     inline fun <reified T> fromJsonString(jsonString: String): T {
         return json.decodeFromString(jsonString)
+    }
+
+    inline fun <reified T> toJsonElement(value: T): JsonElement {
+        return json.encodeToJsonElement(serializer<T>(), value)
     }
 
     /** JSON 배열 문자열을 문자열 리스트로 파싱합니다. 예: ["item1", "item2"] -> listOf("item1", "item2") */
