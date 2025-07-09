@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class ProjectInfo(val id: String, val code: String)
 
 /** 업무의 상위 업무 정보 */
-@Serializable data class ParentPost(val id: String, val number: String, val subject: String)
+@Serializable data class ParentPost(val id: String, val number: Int, val subject: String)
 
 /** 마일스톤 정보 */
 @Serializable data class Milestone(val id: String, val name: String)
@@ -66,7 +66,8 @@ data class Post(
         val workflow: Workflow,
         val milestone: Milestone? = null,
         val tags: List<Tag> = emptyList(),
-        val users: PostUsers
+        val users: PostUsers,
+        val fileIdList: List<String> = emptyList()
 )
 
 /** 업무 상세 정보 */
@@ -90,7 +91,8 @@ data class PostDetail(
         val tags: List<Tag> = emptyList(),
         val body: PostBody,
         val users: PostUsers,
-        val files: List<PostFile> = emptyList()
+        val files: List<PostFile> = emptyList(),
+        val fileIdList: List<String> = emptyList()
 )
 
 /** 업무 생성 요청 */
@@ -145,11 +147,16 @@ data class UpdatePostRequest(
 /** 업무 생성 응답 */
 @Serializable data class CreatePostResponse(val id: String)
 
-/** 업무 목록 응답 */
-@Serializable data class PostListResult(val totalCount: Int, val posts: List<Post>)
+/** 업무 목록 API 응답 */
+@Serializable
+data class PostListApiResponse(
+        val header: DoorayApiHeader,
+        val result: List<Post>,
+        val totalCount: Int
+)
 
 // API 응답 타입 별칭들
-typealias PostListResponse = DoorayApiResponse<List<Post>>
+typealias PostListResponse = PostListApiResponse
 
 typealias PostDetailResponse = DoorayApiResponse<PostDetail>
 
