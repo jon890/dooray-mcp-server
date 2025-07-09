@@ -4,7 +4,9 @@ NHN Dooray 서비스의 MCP(Model Context Protocol) 서버입니다.
 
 ## 주요 기능
 
-- **위키 조회**: 접근 가능한 위키 목록 및 페이지 조회
+- **위키 관리**: 위키 조회, 생성, 수정, 참조자 관리
+- **업무 관리**: 업무 조회, 생성, 수정, 상태 변경
+- **댓글 관리**: 업무 댓글 생성, 조회, 수정, 삭제
 - **JSON 응답**: 규격화된 JSON 형태의 응답
 - **예외 처리**: 일관된 에러 응답 제공
 - **Docker 지원**: 멀티 플랫폼 Docker 이미지 제공
@@ -18,7 +20,6 @@ NHN Dooray 서비스의 MCP(Model Context Protocol) 서버입니다.
 ```bash
 export DOORAY_API_KEY="your_api_key"
 export DOORAY_BASE_URL="https://api.dooray.com"
-export DOORAY_PROJECT_ID="your_project_id"
 ```
 
 ### 로컬 실행
@@ -31,7 +32,7 @@ export DOORAY_PROJECT_ID="your_project_id"
 ./gradlew runLocal
 
 # 또는 직접 실행
-java -jar build/libs/dooray-mcp-server-0.1.4-all.jar
+java -jar build/libs/dooray-mcp-server-0.1.6-all.jar
 ```
 
 ### Docker 실행
@@ -43,86 +44,137 @@ docker pull bifos/dooray-mcp:latest
 # 환경변수와 함께 실행
 docker run -e DOORAY_API_KEY="your_api_key" \
            -e DOORAY_BASE_URL="https://api.dooray.com" \
-           -e DOORAY_PROJECT_ID="your_project_id" \
            bifos/dooray-mcp:latest
 ```
 
-## 사용 가능한 도구
+## 사용 가능한 도구 (총 19개)
 
-### 1. dooray_wiki_list_projects
+### 위키 관련 도구 (8개)
+
+#### 1. dooray_wiki_list_projects
 
 두레이에서 접근 가능한 위키 프로젝트 목록을 조회합니다.
 
-**사용법:**
+#### 2. dooray_wiki_list_pages
+
+특정 두레이 위키 프로젝트의 페이지 목록을 조회합니다.
+
+#### 3. dooray_wiki_get_page
+
+특정 두레이 위키 페이지의 상세 정보를 조회합니다.
+
+#### 4. dooray_wiki_create_page
+
+새로운 위키 페이지를 생성합니다.
+
+#### 5. dooray_wiki_update_page
+
+기존 위키 페이지를 수정합니다.
+
+#### 6. dooray_wiki_update_page_title
+
+위키 페이지의 제목만 수정합니다.
+
+#### 7. dooray_wiki_update_page_content
+
+위키 페이지의 내용만 수정합니다.
+
+#### 8. dooray_wiki_update_page_referrers
+
+위키 페이지의 참조자를 수정합니다.
+
+### 프로젝트 관련 도구 (1개)
+
+#### 9. dooray_project_list_projects
+
+접근 가능한 프로젝트 목록을 조회합니다.
+
+### 업무 관련 도구 (6개)
+
+#### 10. dooray_project_list_posts
+
+프로젝트의 업무 목록을 조회합니다.
+
+#### 11. dooray_project_get_post
+
+특정 업무의 상세 정보를 조회합니다.
+
+#### 12. dooray_project_create_post
+
+새로운 업무를 생성합니다.
+
+#### 13. dooray_project_update_post
+
+기존 업무를 수정합니다.
+
+#### 14. dooray_project_set_post_workflow
+
+업무의 상태(워크플로우)를 변경합니다.
+
+#### 15. dooray_project_set_post_done
+
+업무를 완료 상태로 변경합니다.
+
+### 업무 댓글 관련 도구 (4개)
+
+#### 16. dooray_project_create_post_comment
+
+업무에 댓글을 생성합니다.
+
+#### 17. dooray_project_get_post_comments
+
+업무의 댓글 목록을 조회합니다.
+
+#### 18. dooray_project_update_post_comment
+
+업무 댓글을 수정합니다.
+
+#### 19. dooray_project_delete_post_comment
+
+업무 댓글을 삭제합니다.
+
+## 사용 예시
+
+### 위키 페이지 조회
 
 ```json
 {
   "name": "dooray_wiki_list_projects",
   "arguments": {
-    "page": 1,
+    "page": 0,
     "size": 20
   }
 }
 ```
 
-**매개변수:**
-
-- `page` (선택): 조회할 페이지 번호 (**0부터 시작**, 기본값: 0)
-- `size` (선택): 한 페이지당 결과 수 (기본값: 20, 최대: 200)
-
-### 2. dooray_wiki_list_pages
-
-특정 두레이 위키 프로젝트의 페이지 목록을 조회합니다.
-
-**사용법:**
+### 업무 생성
 
 ```json
 {
-  "name": "dooray_wiki_list_pages",
+  "name": "dooray_project_create_post",
   "arguments": {
-    "projectId": "3647142034893802388"
+    "project_id": "your_project_id",
+    "subject": "새로운 업무",
+    "body": "업무 내용",
+    "to_member_ids": ["member_id_1", "member_id_2"],
+    "priority": "high"
   }
 }
 ```
 
-**매개변수:**
-
-- `projectId` (필수): 위키 프로젝트 ID (dooray_wiki_list_projects로 조회 가능)
-- `parentPageId` (선택): 상위 페이지 ID (없으면 루트 페이지들 조회)
-
-### 3. dooray_wiki_get_page
-
-특정 두레이 위키 페이지의 상세 정보를 조회합니다.
-
-**사용법:**
+### 댓글 생성
 
 ```json
 {
-  "name": "dooray_wiki_get_page",
+  "name": "dooray_project_create_post_comment",
   "arguments": {
-    "projectId": "3647142034893802388",
-    "pageId": "3732036680598959398"
+    "project_id": "your_project_id",
+    "post_id": "your_post_id",
+    "content": "댓글 내용",
+    "mime_type": "text/x-markdown"
   }
 }
 ```
-
-**매개변수:**
-
-- `projectId` (필수): 위키 프로젝트 ID (dooray_wiki_list_projects로 조회 가능)
-- `pageId` (필수): 위키 페이지 ID (dooray_wiki_list_pages로 조회 가능)
-
-### 📝 사용 순서 가이드
-
-1. **프로젝트 찾기**: `dooray_wiki_list_projects`로 원하는 프로젝트의 ID 확인
-   - 💡 **팁**: 많은 프로젝트가 있다면 `size: 200`으로 한 번에 많이 조회하세요
-2. **페이지 목록 조회**: `dooray_wiki_list_pages`로 해당 프로젝트의 위키 페이지들 확인
-3. **페이지 상세 조회**: `dooray_wiki_get_page`로 특정 페이지의 내용 확인
-
-### ⚠️ 주의사항
-
-- **페이지 번호**: 모든 페이지 번호는 **0부터 시작**합니다 (1이 아님)
-- **권한**: 접근 권한이 없는 프로젝트나 페이지는 조회되지 않습니다
-- **API 제한**: 한 번에 최대 200개까지 조회 가능합니다
 
 ## 개발
 
@@ -143,7 +195,7 @@ CI=true ./gradlew test
 ./gradlew clean shadowJar
 
 # Docker 이미지 빌드
-docker build -t dooray-mcp:local --build-arg VERSION=0.1.2 .
+docker build -t dooray-mcp:local --build-arg VERSION=0.1.6 .
 ```
 
 ## Docker 멀티 플랫폼 빌드
@@ -172,11 +224,10 @@ env:
 
 ## 환경변수
 
-| 변수명            | 설명                | 필수 여부 |
-| ----------------- | ------------------- | --------- |
-| DOORAY_API_KEY    | Dooray API 키       | 필수      |
-| DOORAY_BASE_URL   | Dooray API Base URL | 필수      |
-| DOORAY_PROJECT_ID | 기본 프로젝트 ID    | 선택      |
+| 변수명          | 설명                | 필수 여부 |
+| --------------- | ------------------- | --------- |
+| DOORAY_API_KEY  | Dooray API 키       | 필수      |
+| DOORAY_BASE_URL | Dooray API Base URL | 필수      |
 
 ## 라이선스
 

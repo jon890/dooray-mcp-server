@@ -162,4 +162,64 @@ typealias PostDetailResponse = DoorayApiResponse<PostDetail>
 
 typealias CreatePostApiResponse = DoorayApiResponse<CreatePostResponse>
 
-typealias UpdatePostResponse = DoorayApiResponse<Unit>
+typealias UpdatePostResponse = DoorayApiUnitResponse
+
+/** 업무 댓글 본문 */
+@Serializable data class PostCommentBody(val mimeType: String, val content: String)
+
+/** 업무 댓글 첨부파일 */
+@Serializable data class PostCommentFile(val id: String, val name: String, val size: Long)
+
+/** 업무 댓글 정보 */
+@Serializable
+data class PostComment(
+        val id: String,
+        val post: PostInfo,
+        val type: String, // comment, event
+        val subtype: String, // general, from_email, sent_email
+        val createdAt: String,
+        val modifiedAt: String? = null,
+        val creator: PostUser,
+        val mailUsers: MailUsers? = null,
+        val body: PostCommentBody,
+        val files: List<PostCommentFile>? = null
+)
+
+/** 댓글 생성 요청 */
+@Serializable data class CreateCommentRequest(val body: PostCommentBody)
+
+/** 댓글 생성 응답 */
+@Serializable data class CreateCommentResponse(val id: String)
+
+/** 댓글 수정 요청 */
+@Serializable data class UpdateCommentRequest(val body: PostCommentBody)
+
+/** 댓글 목록 응답 구조 */
+@Serializable
+data class PostCommentListApiResponse(
+        val header: DoorayApiHeader,
+        val result: List<PostComment>,
+        val totalCount: Int
+)
+
+// API 응답 타입 별칭들
+typealias PostCommentListResponse = PostCommentListApiResponse
+
+typealias PostCommentDetailResponse = DoorayApiResponse<PostComment>
+
+typealias CreateCommentApiResponse = DoorayApiResponse<CreateCommentResponse>
+
+typealias UpdateCommentResponse = DoorayApiUnitResponse
+
+typealias DeleteCommentResponse = DoorayApiUnitResponse
+
+/** 업무 기본 정보 (댓글에서 참조용) */
+@Serializable data class PostInfo(val id: String)
+
+/** 메일 사용자 정보 */
+@Serializable
+data class MailUsers(
+        val from: EmailUser? = null,
+        val to: List<EmailUser> = emptyList(),
+        val cc: List<EmailUser> = emptyList()
+)

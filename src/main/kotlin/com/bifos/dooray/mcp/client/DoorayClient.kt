@@ -111,7 +111,47 @@ interface DoorayClient {
         parentPostId: String
     ): DoorayApiUnitResponse
 
-    // 프로젝트 관련
+    // ============ 업무 댓글 관련 API ============
+
+    /** 업무에 댓글을 생성합니다. */
+    suspend fun createPostComment(
+        projectId: String,
+        postId: String,
+        request: CreateCommentRequest
+    ): CreateCommentApiResponse
+
+    /** 업무 댓글 목록을 조회합니다. */
+    suspend fun getPostComments(
+        projectId: String,
+        postId: String,
+        page: Int? = null,
+        size: Int? = null,
+        order: String? = null
+    ): PostCommentListResponse
+
+    /** 특정 업무 댓글의 상세 정보를 조회합니다. */
+    suspend fun getPostComment(
+        projectId: String,
+        postId: String,
+        logId: String
+    ): PostCommentDetailResponse
+
+    /** 업무 댓글을 수정합니다. */
+    suspend fun updatePostComment(
+        projectId: String,
+        postId: String,
+        logId: String,
+        request: UpdateCommentRequest
+    ): UpdateCommentResponse
+
+    /** 업무 댓글을 삭제합니다. */
+    suspend fun deletePostComment(
+        projectId: String,
+        postId: String,
+        logId: String
+    ): DeleteCommentResponse
+
+    // ============ 프로젝트 관련 API ============
     suspend fun getProjects(
         page: Int? = null,
         size: Int? = null,
