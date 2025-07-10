@@ -6,8 +6,7 @@ import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_BASE_URL
 import com.bifos.dooray.mcp.constants.VersionConst
 import com.bifos.dooray.mcp.tools.*
 import io.ktor.utils.io.streams.*
-import io.modelcontextprotocol.kotlin.sdk.Implementation
-import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
+import io.modelcontextprotocol.kotlin.sdk.*
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
@@ -26,7 +25,7 @@ class DoorayMcpServer {
 
         val env = getEnv()
 
-        log.info("DOORAY_API_KEY found, initializing HTTP client...")
+        log.info("DOORAY_API_KEY, DOORAY_BASE_URL found, initializing HTTP client...")
         val doorayHttpClient =
             DoorayHttpClient(
                 baseUrl = env[DOORAY_BASE_URL]!!,
@@ -88,154 +87,73 @@ class DoorayMcpServer {
     fun registerTool(server: Server, doorayHttpClient: DoorayHttpClient) {
         log.info("Adding tools...")
 
+        var toolCount = 0
+
+        fun addTool(tool: Tool, handler: suspend (CallToolRequest) -> CallToolResult) {
+            server.addTool(
+                name = tool.name,
+                description = tool.description ?: "",
+                inputSchema = tool.inputSchema,
+                handler = handler
+            )
+            toolCount++
+        }
+
         // 1. 위키 프로젝트 목록 조회
-        val wikisTool = getWikisTool()
-        server.addTool(
-            name = wikisTool.name,
-            description = wikisTool.description ?: "",
-            inputSchema = wikisTool.inputSchema,
-            handler = getWikisHandler(doorayHttpClient)
-        )
+        addTool(getWikisTool(), getWikisHandler(doorayHttpClient))
 
         // 2. 위키 페이지 목록 조회
-        val wikiPagesTool = getWikiPagesTool()
-        server.addTool(
-            name = wikiPagesTool.name,
-            description = wikiPagesTool.description ?: "",
-            inputSchema = wikiPagesTool.inputSchema,
-            handler = getWikiPagesHandler(doorayHttpClient)
-        )
+        addTool(getWikiPagesTool(), getWikiPagesHandler(doorayHttpClient))
 
         // 3. 위키 페이지 상세 조회
-        val wikiPageTool = getWikiPageTool()
-        server.addTool(
-            name = wikiPageTool.name,
-            description = wikiPageTool.description ?: "",
-            inputSchema = wikiPageTool.inputSchema,
-            handler = getWikiPageHandler(doorayHttpClient)
-        )
+        addTool(getWikiPageTool(), getWikiPageHandler(doorayHttpClient))
 
         // 4. 위키 페이지 생성
-        val createWikiPageTool = createWikiPageTool()
-        server.addTool(
-            name = createWikiPageTool.name,
-            description = createWikiPageTool.description ?: "",
-            inputSchema = createWikiPageTool.inputSchema,
-            handler = createWikiPageHandler(doorayHttpClient)
-        )
+        addTool(createWikiPageTool(), createWikiPageHandler(doorayHttpClient))
 
         // 5. 위키 페이지 수정
-        val updateWikiPageTool = updateWikiPageTool()
-        server.addTool(
-            name = updateWikiPageTool.name,
-            description = updateWikiPageTool.description ?: "",
-            inputSchema = updateWikiPageTool.inputSchema,
-            handler = updateWikiPageHandler(doorayHttpClient)
-        )
+        addTool(updateWikiPageTool(), updateWikiPageHandler(doorayHttpClient))
 
         // ============ 프로젝트 업무 관련 도구들 ============
 
         // 6. 프로젝트 업무 목록 조회
-        val projectPostsTool = getProjectPostsTool()
-        server.addTool(
-            name = projectPostsTool.name,
-            description = projectPostsTool.description ?: "",
-            inputSchema = projectPostsTool.inputSchema,
-            handler = getProjectPostsHandler(doorayHttpClient)
-        )
+        addTool(getProjectPostsTool(), getProjectPostsHandler(doorayHttpClient))
 
         // 7. 프로젝트 업무 상세 조회
-        val projectPostTool = getProjectPostTool()
-        server.addTool(
-            name = projectPostTool.name,
-            description = projectPostTool.description ?: "",
-            inputSchema = projectPostTool.inputSchema,
-            handler = getProjectPostHandler(doorayHttpClient)
-        )
+        addTool(getProjectPostTool(), getProjectPostHandler(doorayHttpClient))
 
         // 8. 프로젝트 업무 생성
-        val createProjectPostTool = createProjectPostTool()
-        server.addTool(
-            name = createProjectPostTool.name,
-            description = createProjectPostTool.description ?: "",
-            inputSchema = createProjectPostTool.inputSchema,
-            handler = createProjectPostHandler(doorayHttpClient)
-        )
+        addTool(createProjectPostTool(), createProjectPostHandler(doorayHttpClient))
 
         // 9. 프로젝트 업무 상태 변경
-        val setProjectPostWorkflowTool = setProjectPostWorkflowTool()
-        server.addTool(
-            name = setProjectPostWorkflowTool.name,
-            description = setProjectPostWorkflowTool.description ?: "",
-            inputSchema = setProjectPostWorkflowTool.inputSchema,
-            handler = setProjectPostWorkflowHandler(doorayHttpClient)
+        addTool(
+            setProjectPostWorkflowTool(),
+            setProjectPostWorkflowHandler(doorayHttpClient)
         )
 
         // 10. 프로젝트 업무 완료 처리
-        val setProjectPostDoneTool = setProjectPostDoneTool()
-        server.addTool(
-            name = setProjectPostDoneTool.name,
-            description = setProjectPostDoneTool.description ?: "",
-            inputSchema = setProjectPostDoneTool.inputSchema,
-            handler = setProjectPostDoneHandler(doorayHttpClient)
-        )
+        addTool(setProjectPostDoneTool(), setProjectPostDoneHandler(doorayHttpClient))
 
         // 11. 프로젝트 목록 조회
-        val projectsTool = getProjectsTool()
-        server.addTool(
-            name = projectsTool.name,
-            description = projectsTool.description ?: "",
-            inputSchema = projectsTool.inputSchema,
-            handler = getProjectsHandler(doorayHttpClient)
-        )
+        addTool(getProjectsTool(), getProjectsHandler(doorayHttpClient))
 
         // 12. 프로젝트 업무 수정
-        val updateProjectPostTool = updateProjectPostTool()
-        server.addTool(
-            name = updateProjectPostTool.name,
-            description = updateProjectPostTool.description ?: "",
-            inputSchema = updateProjectPostTool.inputSchema,
-            handler = updateProjectPostHandler(doorayHttpClient)
-        )
+        addTool(updateProjectPostTool(), updateProjectPostHandler(doorayHttpClient))
 
         // ============ 업무 댓글 관련 도구들 ============
 
         // 13. 업무 댓글 생성
-        val createPostCommentTool = createPostCommentTool()
-        server.addTool(
-            name = createPostCommentTool.name,
-            description = createPostCommentTool.description ?: "",
-            inputSchema = createPostCommentTool.inputSchema,
-            handler = createPostCommentHandler(doorayHttpClient)
-        )
+        addTool(createPostCommentTool(), createPostCommentHandler(doorayHttpClient))
 
         // 14. 업무 댓글 목록 조회
-        val getPostCommentsTool = getPostCommentsTool()
-        server.addTool(
-            name = getPostCommentsTool.name,
-            description = getPostCommentsTool.description ?: "",
-            inputSchema = getPostCommentsTool.inputSchema,
-            handler = getPostCommentsHandler(doorayHttpClient)
-        )
+        addTool(getPostCommentsTool(), getPostCommentsHandler(doorayHttpClient))
 
         // 15. 업무 댓글 수정
-        val updatePostCommentTool = updatePostCommentTool()
-        server.addTool(
-            name = updatePostCommentTool.name,
-            description = updatePostCommentTool.description ?: "",
-            inputSchema = updatePostCommentTool.inputSchema,
-            handler = updatePostCommentHandler(doorayHttpClient)
-        )
+        addTool(updatePostCommentTool(), updatePostCommentHandler(doorayHttpClient))
 
         // 16. 업무 댓글 삭제
-        val deletePostCommentTool = deletePostCommentTool()
-        server.addTool(
-            name = deletePostCommentTool.name,
-            description = deletePostCommentTool.description ?: "",
-            inputSchema = deletePostCommentTool.inputSchema,
-            handler = deletePostCommentHandler(doorayHttpClient)
-        )
+        addTool(deletePostCommentTool(), deletePostCommentHandler(doorayHttpClient))
 
-        log.info("Successfully added ${16} tools to MCP server")
+        log.info("Successfully added $toolCount tools to MCP server")
     }
 }
