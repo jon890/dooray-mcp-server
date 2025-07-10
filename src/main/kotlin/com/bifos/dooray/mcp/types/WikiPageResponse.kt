@@ -39,11 +39,7 @@ data class CreateWikiPageRequest(
 
 /** 위키 페이지 수정 요청 */
 @Serializable
-data class UpdateWikiPageRequest(
-        val subject: String? = null,
-        val body: WikiPageBody? = null,
-        val parentPageId: String? = null
-)
+data class UpdateWikiPageRequest(val subject: String? = null, val body: WikiPageBody? = null)
 
 /** 위키 참조자 정보 */
 @Serializable data class WikiReferrer(val type: String = "member", val member: Member)

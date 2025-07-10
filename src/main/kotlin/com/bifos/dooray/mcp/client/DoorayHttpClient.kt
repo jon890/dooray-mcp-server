@@ -196,8 +196,8 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
             wikiId: String,
             pageId: String,
             request: UpdateWikiPageRequest
-    ): WikiPageResponse {
-        return executeApiCall(
+    ): DoorayApiUnitResponse {
+        return executeApiCallForNullableResult(
                 operation = "PUT /wiki/v1/wikis/$wikiId/pages/$pageId",
                 successMessage = "✅ 위키 페이지 수정 성공"
         ) { httpClient.put("/wiki/v1/wikis/$wikiId/pages/$pageId") { setBody(request) } }

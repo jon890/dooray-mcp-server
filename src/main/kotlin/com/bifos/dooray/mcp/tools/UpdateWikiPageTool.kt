@@ -48,10 +48,6 @@ fun updateWikiPageTool(): Tool {
                                                     "새로운 위키 페이지 내용 (Markdown 형식 지원, 선택사항)"
                                             )
                                         }
-                                        putJsonObject("parent_page_id") {
-                                            put("type", "string")
-                                            put("description", "새로운 상위 페이지 ID (선택사항)")
-                                        }
                                     },
                             required = listOf("wiki_id", "page_id")
                     )
@@ -65,7 +61,6 @@ fun updateWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest)
             val pageId = request.arguments["page_id"]?.jsonPrimitive?.content
             val subject = request.arguments["subject"]?.jsonPrimitive?.content
             val bodyContent = request.arguments["body"]?.jsonPrimitive?.content
-            val parentPageId = request.arguments["parent_page_id"]?.jsonPrimitive?.content
 
             when {
                 wikiId == null -> {
@@ -96,12 +91,12 @@ fun updateWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest)
                             content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
                     )
                 }
-                subject == null && bodyContent == null && parentPageId == null -> {
+                subject == null && bodyContent == null -> {
                     val errorResponse =
                             ToolException(
                                             type = ToolException.VALIDATION_ERROR,
                                             message =
-                                                    "수정할 내용이 없습니다. subject, body, parent_page_id 중 적어도 하나는 제공해야 합니다.",
+                                                    "수정할 내용이 없습니다. subject, body 중 적어도 하나는 제공해야 합니다.",
                                             code = "NO_UPDATE_CONTENT"
                                     )
                                     .toErrorResponse()
@@ -120,8 +115,7 @@ fun updateWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest)
                                                         mimeType = "text/x-markdown",
                                                         content = it
                                                 )
-                                            },
-                                    parentPageId = parentPageId
+                                            }
                             )
 
                     val response = doorayClient.updateWikiPage(wikiId, pageId, updateRequest)
@@ -130,15 +124,13 @@ fun updateWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest)
                         val updateParts = mutableListOf<String>()
                         if (subject != null) updateParts.add("제목")
                         if (bodyContent != null) updateParts.add("내용")
-                        if (parentPageId != null) updateParts.add("상위 페이지")
 
                         val updatedFields = updateParts.joinToString(", ")
 
                         val successResponse =
                                 ToolSuccessResponse(
-                                        data = response.result,
-                                        message =
-                                                "✅ 위키 페이지 '${response.result.subject}'의 $updatedFields 을(를) 성공적으로 수정했습니다"
+                                        data = null,
+                                        message = "✅ 위키 페이지의 $updatedFields 을(를) 성공적으로 수정했습니다"
                                 )
 
                         CallToolResult(
