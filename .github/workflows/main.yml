@@ -1,11 +1,9 @@
-name: CI/CD Pipeline
+name: Main Pipeline
 
 on:
   push:
     branches: [master, main]
     tags: ["v*"]
-  pull_request:
-    branches: [master, main]
 
 env:
   REGISTRY: docker.io
@@ -43,17 +41,16 @@ jobs:
       - name: Build application
         run: ./gradlew build --info --stacktrace
 
-      - name: Upload build reports
-        if: failure()
-        uses: actions/upload-artifact@v4
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
         with:
-          name: build-reports
-          path: build/reports/
+          name: build-artifacts
+          path: build/libs/
 
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: build # 빌드 성공 후에만 실행
+    needs: build
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -78,23 +75,21 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run tests (excluding integration tests in CI)
-        env:
-          CI: true
         run: ./gradlew test --info --stacktrace
 
-      - name: Upload test reports
-        if: failure()
-        uses: actions/upload-artifact@v4
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
         with:
-          name: test-reports
-          path: build/reports/tests/test/
+          name: test-results
+          path: |
+            build/reports/tests/
+            build/test-results/
 
   docker-build-and-push:
     name: Docker Build and Push
     runs-on: ubuntu-latest
-    needs: test # 테스트 성공 후에만 실행
-    # main 브랜치 푸시이거나 태그 푸시인 경우에만 실행 (PR에서는 실행 안함)
-    if: github.event_name == 'push'
+    needs: [build, test]
     permissions:
       contents: read
       packages: write
@@ -126,69 +121,67 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Extract version from build.gradle.kts
-        id: version
-        run: |
-          VERSION=$(./gradlew properties --no-daemon --console=plain -q | grep "^version:" | awk '{print $2}')
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "📦 추출된 버전: $VERSION"
-
-      - name: Set build platforms
-        id: platforms
-        run: |
-          if [ "${{ env.ENABLE_ARM64 }}" = "true" ]; then
-            echo "PLATFORMS=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
-            echo "🏗️ AMD64 + ARM64 멀티 플랫폼 빌드"
-          else
-            echo "PLATFORMS=linux/amd64" >> $GITHUB_OUTPUT
-            echo "🏗️ AMD64 단일 플랫폼 빌드 (ARM64 비활성화)"
-          fi
+      - name: Build application jar
+        run: ./gradlew clean shadowJar --info --stacktrace
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Set up QEMU
-        if: env.ENABLE_ARM64 == 'true'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{major}}
 
       - name: Build and push Docker image
-        id: docker-build
+        id: push
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ steps.platforms.outputs.PLATFORMS }}
+          # ARM64 빌드 활성화 여부에 따라 플랫폼 결정
+          platforms: ${{ env.ENABLE_ARM64 == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            VERSION=${{ steps.version.outputs.VERSION }}
 
       - name: Generate artifact attestation
-        if: steps.docker-build.outputs.digest != ''
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.docker-build.outputs.digest }}
+          subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+  main-summary:
+    name: Main Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [build, test, docker-build-and-push]
+    if: always()
+    steps:
+      - name: Main Pipeline Summary
+        run: |
+          echo "🎯 Main 브랜치 파이프라인 완료!"
+          echo "✅ 빌드: ${{ needs.build.result }}"
+          echo "✅ 테스트: ${{ needs.test.result }}"
+          echo "🐳 Docker 빌드 및 푸시: ${{ needs.docker-build-and-push.result }}"
+          if [[ "${{ needs.build.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.docker-build-and-push.result }}" == "success" ]]; then
+            echo "🚀 Main 브랜치 배포가 성공적으로 완료되었습니다!"
+          else
+            echo "❌ Main 브랜치 파이프라인 실패"
+            exit 1
+          fi
