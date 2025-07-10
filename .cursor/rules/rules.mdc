@@ -491,6 +491,66 @@ export DOORAY_BASE_URL="https://api.dooray.com"
 java -jar build/libs/dooray-mcp-server-0.1.5-all.jar
 ```
 
+### CI/CD 파이프라인
+
+#### 워크플로우 구성
+
+프로젝트는 목적별로 분리된 2개의 워크플로우를 사용하여 CI/CD 파이프라인을 구성한다:
+
+**1. PR 파이프라인** (`.github/workflows/pr.yml`)
+
+```yaml
+name: PR Pipeline
+on:
+  pull_request:
+    branches: [master, main]
+```
+
+**2. Main 파이프라인** (`.github/workflows/main.yml`)
+
+```yaml
+name: Main Pipeline
+on:
+  push:
+    branches: [master, main]
+    tags: ["v*"]
+```
+
+#### 의존성 체인
+
+각 워크플로우는 `needs`를 사용하여 순차적인 의존성 체인을 구성한다:
+
+**PR 파이프라인**: Build Job → Test Job → PR Summary
+**Main 파이프라인**: Build Job → Test Job → Docker Build & Push Job → Main Summary
+
+각 단계가 실패하면 후속 단계는 실행되지 않는다.
+
+#### Job 별 역할
+
+**1. Build Job**
+
+- Gradle 빌드 및 애플리케이션 JAR 생성
+- 모든 파이프라인에서 실행
+- 빌드 실패 시 전체 파이프라인 중단
+
+**2. Test Job**
+
+- 단위 테스트 실행 (MockK 기반)
+- 통합 테스트는 CI 환경에서 자동 제외
+- Build Job 성공 시에만 실행
+
+**3. Docker Build & Push Job**
+
+- Docker 이미지 빌드 및 Docker Hub 푸시
+- Main 파이프라인에서만 실행
+- Multi-platform 빌드 지원 (amd64, arm64)
+
+#### 트리거 조건별 실행
+
+- **PR 생성/수정**: PR Pipeline → Build → Test → PR Summary
+- **main 브랜치 푸시**: Main Pipeline → Build → Test → Docker Build & Push → Main Summary
+- **태그 푸시**: Main Pipeline → Build → Test → Docker Build & Push → Main Summary
+
 ### 테스트 환경 설정
 
 #### CI/CD 환경
