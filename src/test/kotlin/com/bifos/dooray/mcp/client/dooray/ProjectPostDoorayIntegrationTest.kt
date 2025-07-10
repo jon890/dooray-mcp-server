@@ -1,4 +1,4 @@
-package com.bifos.dooray.mcp
+package com.bifos.dooray.mcp.client.dooray
 
 import com.bifos.dooray.mcp.types.*
 import kotlinx.coroutines.test.runTest
@@ -10,9 +10,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /** 프로젝트 업무 관련 통합 테스트 */
-class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
-
-    // === 프로젝트 업무 관련 테스트 ===
+class ProjectPostDoorayIntegrationTest : BaseDoorayIntegrationTest() {
 
     @Test
     @DisplayName("특정 프로젝트의 업무 목록이 조회된다")
@@ -165,49 +163,6 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    @DisplayName("새로운 위키 페이지가 생성된다")
-    fun createWikiPageTest() = runTest {
-        // given - 먼저 위키 페이지 목록을 조회해서 루트 페이지 ID를 찾음
-        val pagesResponse = doorayClient.getWikiPages(testProjectId)
-        assertTrue(pagesResponse.result.isNotEmpty(), "테스트할 위키 페이지가 없습니다.")
-
-        // 루트 페이지 하나를 선택 (첫 번째 페이지를 상위 페이지로 사용)
-        val rootPageId = pagesResponse.result.first().id
-        println("📝 루트 페이지 ID: $rootPageId")
-
-        val createRequest =
-            CreateWikiPageRequest(
-                subject = "[통합테스트] 테스트 위키 ${System.currentTimeMillis()}",
-                body =
-                    WikiPageBody(
-                        mimeType = "text/x-markdown",
-                        content = "# 테스트 위키 페이지\n\n이것은 통합 테스트로 생성된 위키 페이지입니다."
-                    ),
-                parentPageId = rootPageId // 루트 페이지를 상위 페이지로 설정
-            )
-
-        // when - 위키 페이지 생성
-        val response = doorayClient.createWikiPage(testWikiId, createRequest)
-
-        // then
-        assertAll(
-            { assertTrue { response.header.isSuccessful } },
-            { assertEquals(response.header.resultCode, 0) }
-        )
-
-        val createdPageId = response.result.id
-        assertNotNull(createdPageId)
-        println("✅ 생성된 위키 페이지 ID: $createdPageId (위키 ID: ${response.result.wikiId})")
-
-        // 생성된 위키 페이지를 추적 목록에 추가 (삭제를 위해)
-        createdWikiPageIds.add(createdPageId)
-        println("📝 위키 페이지 추적 목록에 추가: $createdPageId")
-
-        // 위키 페이지 삭제 API는 지원되지 않음 - 수동으로 정리 필요
-        println("ℹ️ 위키 페이지 삭제는 수동으로 처리해야 함: $createdPageId")
-    }
-
-    @Test
     @DisplayName("업무의 workflow 상태를 변경한다")
     fun setProjectPostWorkflowTest() = runTest {
         // 먼저 기존 업무 목록을 조회해서 유효한 workflow 정보를 확인
@@ -318,8 +273,6 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         println("✅ 업무 완료 처리 테스트 완료")
     }
-
-    // === 프로젝트 관련 테스트 ===
 
     @Test
     @DisplayName("내가 접근할 수 있는 프로젝트 목록이 조회된다")
@@ -721,30 +674,23 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
     @DisplayName("업무의 댓글을 수정한다")
     fun updatePostCommentTest() = runTest {
         // given - 먼저 댓글을 생성
-        val postsResponse = doorayClient.getPosts(testProjectId, size = 1)
-        val postId =
-            if (postsResponse.result.isNotEmpty()) {
-                postsResponse.result.first().id
-            } else {
-                // 업무가 없으면 하나 생성
-                val createRequest =
-                    CreatePostRequest(
-                        subject = "[테스트용] 댓글 수정 테스트 업무 ${System.currentTimeMillis()}",
-                        body =
-                            PostBody(
-                                mimeType = "text/html",
-                                content = "댓글 수정 테스트용 업무입니다."
-                            ),
-                        users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                        priority = "normal"
-                    )
-                val createResponse = doorayClient.createPost(testProjectId, createRequest)
-                assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
+        // 업무가 없으면 하나 생성
+        val createRequest =
+            CreatePostRequest(
+                subject = "[테스트용] 댓글 수정 테스트 업무 ${System.currentTimeMillis()}",
+                body =
+                    PostBody(
+                        mimeType = "text/html",
+                        content = "댓글 수정 테스트용 업무입니다."
+                    ),
+                users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                priority = "normal"
+            )
+        val createResponse = doorayClient.createPost(testProjectId, createRequest)
+        assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
 
-                val createdPostId = createResponse.result.id
-                createdPostIds.add(createdPostId)
-                createdPostId
-            }
+        val createdPostId = createResponse.result.id
+        createdPostIds.add(createdPostId)
 
         // 댓글 생성
         val commentRequest =
@@ -755,7 +701,7 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
                         content = "수정 전 댓글 내용 ${System.currentTimeMillis()}"
                     )
             )
-        val commentResponse = doorayClient.createPostComment(testProjectId, postId, commentRequest)
+        val commentResponse = doorayClient.createPostComment(testProjectId, createdPostId, commentRequest)
         assertTrue(commentResponse.header.isSuccessful, "테스트용 댓글 생성에 실패했습니다.")
 
         val commentId = commentResponse.result.id
@@ -771,7 +717,7 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
             )
 
         val updateResponse =
-            doorayClient.updatePostComment(testProjectId, postId, commentId, updateRequest)
+            doorayClient.updatePostComment(testProjectId, createdPostId, commentId, updateRequest)
 
         // then
         assertAll(
@@ -779,14 +725,11 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
             { assertEquals(updateResponse.header.resultCode, 0) }
         )
 
-        println("✅ 댓글 수정 성공: ${commentId}")
-
         // 수정된 내용 확인
-        val commentsResponse = doorayClient.getPostComments(testProjectId, postId)
+        val commentsResponse = doorayClient.getPostComments(testProjectId, createdPostId)
         val updatedComment = commentsResponse.result.find { it.id == commentId }
         assertNotNull(updatedComment, "수정된 댓글을 찾을 수 없습니다.")
         assertTrue(updatedComment.body.content.contains("수정된 댓글 내용"), "댓글이 수정되지 않았습니다.")
-        println("  - 수정된 내용: ${updatedComment.body.content}")
     }
 
     @Test

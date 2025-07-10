@@ -1,11 +1,9 @@
-package com.bifos.dooray.mcp
+package com.bifos.dooray.mcp.client.dooray
 
 import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.client.DoorayHttpClient
-import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_API_KEY
-import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_BASE_URL
-import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_TEST_PROJECT_ID
-import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_TEST_WIKI_ID
+import com.bifos.dooray.mcp.constants.EnvVariableConst
+import com.bifos.dooray.mcp.util.parseEnv
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -13,7 +11,7 @@ import org.junit.jupiter.api.TestInstance
 
 /** Dooray Http Client 통합 테스트를 위한 추상 베이스 클래스 실제 HTTP 요청을 보내므로 환경변수가 설정되어야 함 */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-abstract class BaseIntegrationTest {
+abstract class BaseDoorayIntegrationTest {
 
     protected lateinit var testProjectId: String
     protected lateinit var testWikiId: String
@@ -28,16 +26,16 @@ abstract class BaseIntegrationTest {
         val env = parseEnv()
 
         val baseUrl =
-            env[DOORAY_BASE_URL]
+            env[EnvVariableConst.DOORAY_BASE_URL]
                 ?: throw IllegalStateException("DOORAY_BASE_URL 환경변수가 설정되지 않았습니다.")
         val apiKey =
-            env[DOORAY_API_KEY]
+            env[EnvVariableConst.DOORAY_API_KEY]
                 ?: throw IllegalStateException("DOORAY_API_KEY 환경변수가 설정되지 않았습니다.")
         this.testProjectId =
-            env[DOORAY_TEST_PROJECT_ID]
+            env[EnvVariableConst.DOORAY_TEST_PROJECT_ID]
                 ?: throw IllegalStateException("DOORAY_TEST_PROJECT_ID 환경변수가 설정되지 않았습니다.")
         this.testWikiId =
-            env[DOORAY_TEST_WIKI_ID]
+            env[EnvVariableConst.DOORAY_TEST_WIKI_ID]
                 ?: throw IllegalStateException("DOORAY_TEST_WIKI_ID 환경변수가 설정되지 않았습니다.")
 
         doorayClient = DoorayHttpClient(baseUrl, apiKey)

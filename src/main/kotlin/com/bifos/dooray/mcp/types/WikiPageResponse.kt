@@ -35,12 +35,18 @@ data class CreateWikiPageResult(
 data class CreateWikiPageRequest(
     val subject: String,
     val body: WikiPageBody,
-    val parentPageId: String? = null
+    val parentPageId: String, // 필수 필드
+    val attachFileIds: List<String>? = null,
+    val referrers: List<WikiReferrer>? = null
 )
 
 /** 위키 페이지 수정 요청 */
 @Serializable
-data class UpdateWikiPageRequest(val subject: String? = null, val body: WikiPageBody? = null)
+data class UpdateWikiPageRequest(
+    val subject: String? = null,
+    val body: WikiPageBody? = null,
+    val referrers: List<WikiReferrer>? = null
+)
 
 /** 위키 참조자 정보 */
 @Serializable
