@@ -27,27 +27,6 @@ interface DoorayClient {
         wikiId: String,
         pageId: String,
         request: UpdateWikiPageRequest
-    ): WikiPageResponse
-
-    /** 위키 페이지 제목만 수정합니다. */
-    suspend fun updateWikiPageTitle(
-        wikiId: String,
-        pageId: String,
-        subject: String
-    ): DoorayApiUnitResponse
-
-    /** 위키 페이지 내용만 수정합니다. */
-    suspend fun updateWikiPageContent(
-        wikiId: String,
-        pageId: String,
-        body: String
-    ): DoorayApiUnitResponse
-
-    /** 위키 페이지 참조자를 수정합니다. */
-    suspend fun updateWikiPageReferrers(
-        wikiId: String,
-        pageId: String,
-        referrers: List<WikiReferrer>
     ): DoorayApiUnitResponse
 
     // ============ 프로젝트 업무 관련 API ============

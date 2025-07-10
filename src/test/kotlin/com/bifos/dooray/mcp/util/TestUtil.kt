@@ -1,4 +1,4 @@
-package com.bifos.dooray.mcp
+package com.bifos.dooray.mcp.util
 
 import java.io.File
 
