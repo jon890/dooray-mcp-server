@@ -15,70 +15,70 @@ import kotlinx.serialization.json.putJsonObject
 
 fun createProjectPostTool(): Tool {
     return Tool(
-            name = "dooray_project_create_post",
-            description = "두레이 프로젝트에 새로운 업무를 생성합니다. 담당자, 참조자, 우선순위 등을 설정할 수 있습니다.",
-            inputSchema =
-                    Tool.Input(
-                            properties =
-                                    buildJsonObject {
-                                        putJsonObject("project_id") {
-                                            put("type", "string")
-                                            put("description", "프로젝트 ID (필수)")
-                                        }
-                                        putJsonObject("subject") {
-                                            put("type", "string")
-                                            put("description", "업무 제목 (필수)")
-                                        }
-                                        putJsonObject("body") {
-                                            put("type", "string")
-                                            put("description", "업무 내용 (필수)")
-                                        }
-                                        putJsonObject("to_member_ids") {
-                                            put("type", "array")
-                                            putJsonObject("items") { put("type", "string") }
-                                            put("description", "담당자 멤버 ID 목록 (필수)")
-                                        }
-                                        putJsonObject("cc_member_ids") {
-                                            put("type", "array")
-                                            putJsonObject("items") { put("type", "string") }
-                                            put("description", "참조자 멤버 ID 목록 (선택사항)")
-                                        }
-                                        putJsonObject("parent_post_id") {
-                                            put("type", "string")
-                                            put("description", "상위 업무 ID - 하위 업무로 생성할 경우 (선택사항)")
-                                        }
-                                        putJsonObject("due_date") {
-                                            put("type", "string")
-                                            put(
-                                                    "description",
-                                                    "만기일 (ISO8601 형식, 예: 2024-12-31T18:00:00+09:00) (선택사항)"
-                                            )
-                                        }
-                                        putJsonObject("milestone_id") {
-                                            put("type", "string")
-                                            put("description", "마일스톤 ID (선택사항)")
-                                        }
-                                        putJsonObject("tag_ids") {
-                                            put("type", "array")
-                                            putJsonObject("items") { put("type", "string") }
-                                            put("description", "태그 ID 목록 (선택사항)")
-                                        }
-                                        putJsonObject("priority") {
-                                            put("type", "string")
-                                            put(
-                                                    "description",
-                                                    "우선순위 (highest, high, normal, low, lowest, none) (기본값: none)"
-                                            )
-                                            put("default", "none")
-                                        }
-                                    },
-                            required = listOf("project_id", "subject", "body", "to_member_ids")
-                    )
+        name = "dooray_project_create_post",
+        description = "두레이 프로젝트에 새로운 업무를 생성합니다. 담당자, 참조자, 우선순위 등을 설정할 수 있습니다.",
+        inputSchema =
+            Tool.Input(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("project_id") {
+                            put("type", "string")
+                            put("description", "프로젝트 ID (필수)")
+                        }
+                        putJsonObject("subject") {
+                            put("type", "string")
+                            put("description", "업무 제목 (필수)")
+                        }
+                        putJsonObject("body") {
+                            put("type", "string")
+                            put("description", "업무 내용 (필수)")
+                        }
+                        putJsonObject("to_member_ids") {
+                            put("type", "array")
+                            putJsonObject("items") { put("type", "string") }
+                            put("description", "담당자 멤버 ID 목록 (필수)")
+                        }
+                        putJsonObject("cc_member_ids") {
+                            put("type", "array")
+                            putJsonObject("items") { put("type", "string") }
+                            put("description", "참조자 멤버 ID 목록 (선택사항)")
+                        }
+                        putJsonObject("parent_post_id") {
+                            put("type", "string")
+                            put("description", "상위 업무 ID - 하위 업무로 생성할 경우 (선택사항)")
+                        }
+                        putJsonObject("due_date") {
+                            put("type", "string")
+                            put(
+                                "description",
+                                "만기일 (ISO8601 형식, 예: 2024-12-31T18:00:00+09:00) (선택사항)"
+                            )
+                        }
+                        putJsonObject("milestone_id") {
+                            put("type", "string")
+                            put("description", "마일스톤 ID (선택사항)")
+                        }
+                        putJsonObject("tag_ids") {
+                            put("type", "array")
+                            putJsonObject("items") { put("type", "string") }
+                            put("description", "태그 ID 목록 (선택사항)")
+                        }
+                        putJsonObject("priority") {
+                            put("type", "string")
+                            put(
+                                "description",
+                                "우선순위 (highest, high, normal, low, lowest, none) (기본값: none)"
+                            )
+                            put("default", "none")
+                        }
+                    },
+                required = listOf("project_id", "subject", "body", "to_member_ids")
+            )
     )
 }
 
 fun createProjectPostHandler(
-        doorayClient: DoorayClient
+    doorayClient: DoorayClient
 ): suspend (CallToolRequest) -> CallToolResult {
     return { request ->
         try {
@@ -86,154 +86,158 @@ fun createProjectPostHandler(
             val subject = request.arguments["subject"]?.jsonPrimitive?.content
             val body = request.arguments["body"]?.jsonPrimitive?.content
             val toMemberIds =
-                    request.arguments["to_member_ids"]?.let { element ->
-                        JsonUtils.parseStringArray(element.toString())
-                    }
+                request.arguments["to_member_ids"]?.let { element ->
+                    JsonUtils.parseStringArray(element.toString())
+                }
 
             when {
                 projectId == null -> {
                     val errorResponse =
-                            ToolException(
-                                            type = ToolException.PARAMETER_MISSING,
-                                            message = "project_id 파라미터가 필요합니다. 프로젝트 ID를 입력하세요.",
-                                            code = "MISSING_PROJECT_ID"
-                                    )
-                                    .toErrorResponse()
+                        ToolException(
+                            type = ToolException.PARAMETER_MISSING,
+                            message = "project_id 파라미터가 필요합니다. 프로젝트 ID를 입력하세요.",
+                            code = "MISSING_PROJECT_ID"
+                        )
+                            .toErrorResponse()
 
                     CallToolResult(
-                            content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
+                        content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
                     )
                 }
+
                 subject == null -> {
                     val errorResponse =
-                            ToolException(
-                                            type = ToolException.PARAMETER_MISSING,
-                                            message = "subject 파라미터가 필요합니다. 업무 제목을 입력하세요.",
-                                            code = "MISSING_SUBJECT"
-                                    )
-                                    .toErrorResponse()
+                        ToolException(
+                            type = ToolException.PARAMETER_MISSING,
+                            message = "subject 파라미터가 필요합니다. 업무 제목을 입력하세요.",
+                            code = "MISSING_SUBJECT"
+                        )
+                            .toErrorResponse()
 
                     CallToolResult(
-                            content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
+                        content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
                     )
                 }
+
                 body == null -> {
                     val errorResponse =
-                            ToolException(
-                                            type = ToolException.PARAMETER_MISSING,
-                                            message = "body 파라미터가 필요합니다. 업무 내용을 입력하세요.",
-                                            code = "MISSING_BODY"
-                                    )
-                                    .toErrorResponse()
+                        ToolException(
+                            type = ToolException.PARAMETER_MISSING,
+                            message = "body 파라미터가 필요합니다. 업무 내용을 입력하세요.",
+                            code = "MISSING_BODY"
+                        )
+                            .toErrorResponse()
 
                     CallToolResult(
-                            content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
+                        content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
                     )
                 }
+
                 toMemberIds == null || toMemberIds.isEmpty() -> {
                     val errorResponse =
-                            ToolException(
-                                            type = ToolException.PARAMETER_MISSING,
-                                            message =
-                                                    "to_member_ids 파라미터가 필요합니다. 담당자 멤버 ID 목록을 입력하세요.",
-                                            code = "MISSING_TO_MEMBER_IDS"
-                                    )
-                                    .toErrorResponse()
+                        ToolException(
+                            type = ToolException.PARAMETER_MISSING,
+                            message =
+                                "to_member_ids 파라미터가 필요합니다. 담당자 멤버 ID 목록을 입력하세요.",
+                            code = "MISSING_TO_MEMBER_IDS"
+                        )
+                            .toErrorResponse()
 
                     CallToolResult(
-                            content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
+                        content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
                     )
                 }
+
                 else -> {
                     // 선택적 파라미터 처리
                     val ccMemberIds =
-                            request.arguments["cc_member_ids"]?.let { element ->
-                                JsonUtils.parseStringArray(element.toString())
-                            }
-                                    ?: emptyList()
+                        request.arguments["cc_member_ids"]?.let { element ->
+                            JsonUtils.parseStringArray(element.toString())
+                        }
+                            ?: emptyList()
 
                     val parentPostId = request.arguments["parent_post_id"]?.jsonPrimitive?.content
                     val dueDate = request.arguments["due_date"]?.jsonPrimitive?.content
                     val milestoneId = request.arguments["milestone_id"]?.jsonPrimitive?.content
                     val tagIds =
-                            request.arguments["tag_ids"]?.let { element ->
-                                JsonUtils.parseStringArray(element.toString())
-                            }
-                                    ?: emptyList()
+                        request.arguments["tag_ids"]?.let { element ->
+                            JsonUtils.parseStringArray(element.toString())
+                        }
+                            ?: emptyList()
                     val priority = request.arguments["priority"]?.jsonPrimitive?.content ?: "none"
 
                     // 담당자 목록 생성
                     val toUsers =
-                            toMemberIds.map { memberId ->
-                                CreatePostUser(
-                                        type = "member",
-                                        member = Member(organizationMemberId = memberId)
-                                )
-                            }
+                        toMemberIds.map { memberId ->
+                            CreatePostUser(
+                                type = "member",
+                                member = Member(organizationMemberId = memberId)
+                            )
+                        }
 
                     // 참조자 목록 생성
                     val ccUsers =
-                            ccMemberIds.map { memberId ->
-                                CreatePostUser(
-                                        type = "member",
-                                        member = Member(organizationMemberId = memberId)
-                                )
-                            }
+                        ccMemberIds.map { memberId ->
+                            CreatePostUser(
+                                type = "member",
+                                member = Member(organizationMemberId = memberId)
+                            )
+                        }
 
                     val createRequest =
-                            CreatePostRequest(
-                                    parentPostId = parentPostId,
-                                    users = CreatePostUsers(to = toUsers, cc = ccUsers),
-                                    subject = subject,
-                                    body = PostBody(mimeType = "text/x-markdown", content = body),
-                                    dueDate = dueDate,
-                                    milestoneId = milestoneId,
-                                    tagIds = tagIds,
-                                    priority = priority
-                            )
+                        CreatePostRequest(
+                            parentPostId = parentPostId,
+                            users = CreatePostUsers(to = toUsers, cc = ccUsers),
+                            subject = subject,
+                            body = PostBody(mimeType = "text/x-markdown", content = body),
+                            dueDate = dueDate,
+                            milestoneId = milestoneId,
+                            tagIds = tagIds,
+                            priority = priority
+                        )
 
                     val response = doorayClient.createPost(projectId, createRequest)
 
                     if (response.header.isSuccessful) {
                         val nextStepHint =
-                                "\n\n💡 다음 가능한 작업:\n" +
-                                        "- dooray_project_get_post: 생성된 업무 상세 조회\n" +
-                                        "- dooray_project_list_posts: 프로젝트 업무 목록 조회"
+                            "\n\n💡 다음 가능한 작업:\n" +
+                                    "- dooray_project_get_post: 생성된 업무 상세 조회\n" +
+                                    "- dooray_project_list_posts: 프로젝트 업무 목록 조회"
 
                         val successResponse =
-                                ToolSuccessResponse(
-                                        data = response.result,
-                                        message =
-                                                "✅ 업무를 성공적으로 생성했습니다 (업무 ID: ${response.result.id})$nextStepHint"
-                                )
+                            ToolSuccessResponse(
+                                data = response.result,
+                                message =
+                                    "✅ 업무를 성공적으로 생성했습니다 (업무 ID: ${response.result.id})$nextStepHint"
+                            )
 
                         CallToolResult(
-                                content =
-                                        listOf(TextContent(JsonUtils.toJsonString(successResponse)))
+                            content =
+                                listOf(TextContent(JsonUtils.toJsonString(successResponse)))
                         )
                     } else {
                         val errorResponse =
-                                ToolException(
-                                                type = ToolException.API_ERROR,
-                                                message = response.header.resultMessage,
-                                                code = "DOORAY_API_${response.header.resultCode}"
-                                        )
-                                        .toErrorResponse()
+                            ToolException(
+                                type = ToolException.API_ERROR,
+                                message = response.header.resultMessage,
+                                code = "DOORAY_API_${response.header.resultCode}"
+                            )
+                                .toErrorResponse()
 
                         CallToolResult(
-                                content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
+                            content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
                         )
                     }
                 }
             }
         } catch (e: Exception) {
             val errorResponse =
-                    ToolException(
-                                    type = ToolException.INTERNAL_ERROR,
-                                    message = "내부 오류가 발생했습니다: ${e.message}",
-                                    details = e.stackTraceToString()
-                            )
-                            .toErrorResponse()
+                ToolException(
+                    type = ToolException.INTERNAL_ERROR,
+                    message = "내부 오류가 발생했습니다: ${e.message}",
+                    details = e.stackTraceToString()
+                )
+                    .toErrorResponse()
 
             CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
         }
