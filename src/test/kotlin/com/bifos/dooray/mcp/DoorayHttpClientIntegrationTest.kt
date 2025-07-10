@@ -1,12 +1,13 @@
 package com.bifos.dooray.mcp
 
 import com.bifos.dooray.mcp.types.*
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.*
 
 /** 프로젝트 업무 관련 통합 테스트 */
 class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
@@ -21,8 +22,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         println("✅ 업무 목록 조회 성공: ${response.result.size}개")
@@ -41,17 +42,17 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
     fun getProjectPostsWithFiltersTest() = runTest {
         // when - 등록 상태 업무만 조회
         val response =
-                doorayClient.getPosts(
-                        projectId = testProjectId,
-                        postWorkflowClasses = listOf("registered"),
-                        order = "createdAt",
-                        size = 5
-                )
+            doorayClient.getPosts(
+                projectId = testProjectId,
+                postWorkflowClasses = listOf("registered"),
+                order = "createdAt",
+                size = 5
+            )
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         println("✅ 필터링된 업무 목록 조회 성공: ${response.result.size}개")
@@ -72,16 +73,16 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
         if (postsResponse.result.isEmpty()) {
             // 업무가 없으면 하나 생성
             val createRequest =
-                    CreatePostRequest(
-                            subject = "[테스트용] 상세 조회 테스트 업무 ${System.currentTimeMillis()}",
-                            body =
-                                    PostBody(
-                                            mimeType = "text/html",
-                                            content = "상세 조회 테스트용 임시 업무입니다."
-                                    ),
-                            users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                            priority = "normal"
-                    )
+                CreatePostRequest(
+                    subject = "[테스트용] 상세 조회 테스트 업무 ${System.currentTimeMillis()}",
+                    body =
+                        PostBody(
+                            mimeType = "text/html",
+                            content = "상세 조회 테스트용 임시 업무입니다."
+                        ),
+                    users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                    priority = "normal"
+                )
             val createResponse = doorayClient.createPost(testProjectId, createRequest)
             assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
 
@@ -92,8 +93,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
             val response = doorayClient.getPost(testProjectId, createdPostId)
 
             assertAll(
-                    { assertTrue { response.header.isSuccessful } },
-                    { assertEquals(response.header.resultCode, 0) }
+                { assertTrue { response.header.isSuccessful } },
+                { assertEquals(response.header.resultCode, 0) }
             )
 
             response.result.let { post ->
@@ -113,8 +114,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
             val response = doorayClient.getPost(testProjectId, postId)
 
             assertAll(
-                    { assertTrue { response.header.isSuccessful } },
-                    { assertEquals(response.header.resultCode, 0) }
+                { assertTrue { response.header.isSuccessful } },
+                { assertEquals(response.header.resultCode, 0) }
             )
 
             response.result.let { post ->
@@ -134,24 +135,24 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
     @DisplayName("새로운 업무가 생성된다")
     fun createProjectPostTest() = runTest {
         val createRequest =
-                CreatePostRequest(
-                        subject = "[통합테스트] 테스트 업무 ${System.currentTimeMillis()}",
-                        body = PostBody(mimeType = "text/html", content = "이것은 통합 테스트로 생성된 업무입니다."),
-                        users =
-                                CreatePostUsers(
-                                        to = emptyList(), // 담당자는 빈 목록으로 설정
-                                        cc = emptyList()
-                                ),
-                        priority = "normal"
-                )
+            CreatePostRequest(
+                subject = "[통합테스트] 테스트 업무 ${System.currentTimeMillis()}",
+                body = PostBody(mimeType = "text/html", content = "이것은 통합 테스트로 생성된 업무입니다."),
+                users =
+                    CreatePostUsers(
+                        to = emptyList(), // 담당자는 빈 목록으로 설정
+                        cc = emptyList()
+                    ),
+                priority = "normal"
+            )
 
         // when - 업무 생성
         val response = doorayClient.createPost(testProjectId, createRequest)
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         val createdPostId = response.result.id
@@ -175,23 +176,23 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
         println("📝 루트 페이지 ID: $rootPageId")
 
         val createRequest =
-                CreateWikiPageRequest(
-                        subject = "[통합테스트] 테스트 위키 ${System.currentTimeMillis()}",
-                        body =
-                                WikiPageBody(
-                                        mimeType = "text/x-markdown",
-                                        content = "# 테스트 위키 페이지\n\n이것은 통합 테스트로 생성된 위키 페이지입니다."
-                                ),
-                        parentPageId = rootPageId // 루트 페이지를 상위 페이지로 설정
-                )
+            CreateWikiPageRequest(
+                subject = "[통합테스트] 테스트 위키 ${System.currentTimeMillis()}",
+                body =
+                    WikiPageBody(
+                        mimeType = "text/x-markdown",
+                        content = "# 테스트 위키 페이지\n\n이것은 통합 테스트로 생성된 위키 페이지입니다."
+                    ),
+                parentPageId = rootPageId // 루트 페이지를 상위 페이지로 설정
+            )
 
         // when - 위키 페이지 생성
         val response = doorayClient.createWikiPage(testWikiId, createRequest)
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         val createdPageId = response.result.id
@@ -218,12 +219,12 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // 업무 하나를 생성
         val createRequest =
-                CreatePostRequest(
-                        subject = "[통합테스트] 상태 변경 테스트 업무 ${System.currentTimeMillis()}",
-                        body = PostBody(mimeType = "text/html", content = "상태 변경 테스트용 업무입니다."),
-                        users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                        priority = "normal"
-                )
+            CreatePostRequest(
+                subject = "[통합테스트] 상태 변경 테스트 업무 ${System.currentTimeMillis()}",
+                body = PostBody(mimeType = "text/html", content = "상태 변경 테스트용 업무입니다."),
+                users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                priority = "normal"
+            )
         val createResponse = doorayClient.createPost(testProjectId, createRequest)
         assertTrue(createResponse.header.isSuccessful, "업무 생성에 실패했습니다.")
 
@@ -237,9 +238,9 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // 기존 업무들의 다른 workflow ID 찾기
         val differentWorkflowIds =
-                postsResponse.result.map { it.workflow.id }.distinct().filter {
-                    it != currentWorkflowId
-                }
+            postsResponse.result.map { it.workflow.id }.distinct().filter {
+                it != currentWorkflowId
+            }
 
         if (differentWorkflowIds.isNotEmpty()) {
             val targetWorkflowId = differentWorkflowIds.first()
@@ -280,12 +281,12 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
     fun setProjectPostDoneTest() = runTest {
         // 업무 하나를 생성
         val createRequest =
-                CreatePostRequest(
-                        subject = "[통합테스트] 완료 처리 테스트 업무 ${System.currentTimeMillis()}",
-                        body = PostBody(mimeType = "text/html", content = "완료 처리 테스트용 업무입니다."),
-                        users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                        priority = "normal"
-                )
+            CreatePostRequest(
+                subject = "[통합테스트] 완료 처리 테스트 업무 ${System.currentTimeMillis()}",
+                body = PostBody(mimeType = "text/html", content = "완료 처리 테스트용 업무입니다."),
+                users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                priority = "normal"
+            )
         val createResponse = doorayClient.createPost(testProjectId, createRequest)
         assertTrue(createResponse.header.isSuccessful, "업무 생성에 실패했습니다.")
 
@@ -325,18 +326,18 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
     fun getProjectsTest() = runTest {
         // when - 기본 조회 (권장 파라미터 사용)
         val response =
-                doorayClient.getProjects(
-                        page = 0,
-                        size = 100,
-                        type = "public",
-                        scope = "private",
-                        state = "active"
-                )
+            doorayClient.getProjects(
+                page = 0,
+                size = 100,
+                type = "public",
+                scope = "private",
+                state = "active"
+            )
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         response.result.let { projects ->
@@ -359,8 +360,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         println("✅ 기본 파라미터 프로젝트 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
@@ -380,8 +381,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         println("✅ 활성화된 프로젝트 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
@@ -405,8 +406,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         println("✅ 보관된 프로젝트 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
@@ -434,8 +435,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         println("✅ 공개 범위 프로젝트 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
@@ -459,8 +460,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         println("✅ 개인 프로젝트 포함 조회 성공: 총 ${response.totalCount}개 중 ${response.result.size}개 조회")
@@ -492,12 +493,12 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { firstPageResponse.header.isSuccessful } },
-                { assertEquals(firstPageResponse.header.resultCode, 0) }
+            { assertTrue { firstPageResponse.header.isSuccessful } },
+            { assertEquals(firstPageResponse.header.resultCode, 0) }
         )
 
         println(
-                "✅ 첫 번째 페이지 조회 성공: 총 ${firstPageResponse.totalCount}개 중 ${firstPageResponse.result.size}개 조회"
+            "✅ 첫 번째 페이지 조회 성공: 총 ${firstPageResponse.totalCount}개 중 ${firstPageResponse.result.size}개 조회"
         )
 
         // 총 개수가 5개보다 많다면 두 번째 페이지도 조회
@@ -505,8 +506,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
             val secondPageResponse = doorayClient.getProjects(page = 1, size = 5, state = "active")
 
             assertAll(
-                    { assertTrue { secondPageResponse.header.isSuccessful } },
-                    { assertEquals(secondPageResponse.header.resultCode, 0) }
+                { assertTrue { secondPageResponse.header.isSuccessful } },
+                { assertEquals(secondPageResponse.header.resultCode, 0) }
             )
 
             println("✅ 두 번째 페이지 조회 성공: ${secondPageResponse.result.size}개 조회")
@@ -534,8 +535,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { response.header.isSuccessful } },
-                { assertEquals(response.header.resultCode, 0) }
+            { assertTrue { response.header.isSuccessful } },
+            { assertEquals(response.header.resultCode, 0) }
         )
 
         println("✅ 프로젝트 위키 정보 조회 성공: ${response.result.size}개")
@@ -552,7 +553,7 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
                     println("  - 프로젝트: ${project.code}, 위키 객체 있음 (ID: null)")
                 }
             }
-                    ?: run { println("  - 프로젝트: ${project.code}, 위키 없음") }
+                ?: run { println("  - 프로젝트: ${project.code}, 위키 없음") }
 
             // 조직 정보 확인
             project.organization?.let { org ->
@@ -581,12 +582,12 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
     fun updatePostTest() = runTest {
         // given - 먼저 테스트용 업무를 생성
         val createRequest =
-                CreatePostRequest(
-                        subject = "[테스트용] 수정될 업무 ${System.currentTimeMillis()}",
-                        body = PostBody(mimeType = "text/html", content = "수정 전 내용입니다."),
-                        users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                        priority = "normal"
-                )
+            CreatePostRequest(
+                subject = "[테스트용] 수정될 업무 ${System.currentTimeMillis()}",
+                body = PostBody(mimeType = "text/html", content = "수정 전 내용입니다."),
+                users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                priority = "normal"
+            )
 
         val createResponse = doorayClient.createPost(testProjectId, createRequest)
         assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
@@ -596,19 +597,19 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // when - 업무 수정
         val updateRequest =
-                UpdatePostRequest(
-                        subject = "[테스트용] 수정된 업무 제목 ${System.currentTimeMillis()}",
-                        body = PostBody(mimeType = "text/html", content = "수정된 내용입니다."),
-                        users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                        priority = "high"
-                )
+            UpdatePostRequest(
+                subject = "[테스트용] 수정된 업무 제목 ${System.currentTimeMillis()}",
+                body = PostBody(mimeType = "text/html", content = "수정된 내용입니다."),
+                users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                priority = "high"
+            )
 
         val updateResponse = doorayClient.updatePost(testProjectId, createdPostId, updateRequest)
 
         // then
         assertAll(
-                { assertTrue { updateResponse.header.isSuccessful } },
-                { assertEquals(updateResponse.header.resultCode, 0) }
+            { assertTrue { updateResponse.header.isSuccessful } },
+            { assertEquals(updateResponse.header.resultCode, 0) }
         )
 
         println("✅ 업무 수정 성공: ${createdPostId}")
@@ -633,45 +634,45 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
         // given - 먼저 테스트용 업무를 생성하거나 기존 업무를 사용
         val postsResponse = doorayClient.getPosts(testProjectId, size = 1)
         val postId =
-                if (postsResponse.result.isNotEmpty()) {
-                    postsResponse.result.first().id
-                } else {
-                    // 업무가 없으면 하나 생성
-                    val createRequest =
-                            CreatePostRequest(
-                                    subject = "[테스트용] 댓글 테스트 업무 ${System.currentTimeMillis()}",
-                                    body =
-                                            PostBody(
-                                                    mimeType = "text/html",
-                                                    content = "댓글 테스트용 업무입니다."
-                                            ),
-                                    users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                                    priority = "normal"
-                            )
-                    val createResponse = doorayClient.createPost(testProjectId, createRequest)
-                    assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
+            if (postsResponse.result.isNotEmpty()) {
+                postsResponse.result.first().id
+            } else {
+                // 업무가 없으면 하나 생성
+                val createRequest =
+                    CreatePostRequest(
+                        subject = "[테스트용] 댓글 테스트 업무 ${System.currentTimeMillis()}",
+                        body =
+                            PostBody(
+                                mimeType = "text/html",
+                                content = "댓글 테스트용 업무입니다."
+                            ),
+                        users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                        priority = "normal"
+                    )
+                val createResponse = doorayClient.createPost(testProjectId, createRequest)
+                assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
 
-                    val createdPostId = createResponse.result.id
-                    createdPostIds.add(createdPostId)
-                    createdPostId
-                }
+                val createdPostId = createResponse.result.id
+                createdPostIds.add(createdPostId)
+                createdPostId
+            }
 
         // when - 댓글 생성
         val commentRequest =
-                CreateCommentRequest(
-                        body =
-                                PostCommentBody(
-                                        mimeType = "text/html",
-                                        content = "테스트 댓글입니다. ${System.currentTimeMillis()}"
-                                )
-                )
+            CreateCommentRequest(
+                body =
+                    PostCommentBody(
+                        mimeType = "text/html",
+                        content = "테스트 댓글입니다. ${System.currentTimeMillis()}"
+                    )
+            )
 
         val commentResponse = doorayClient.createPostComment(testProjectId, postId, commentRequest)
 
         // then
         assertAll(
-                { assertTrue { commentResponse.header.isSuccessful } },
-                { assertEquals(commentResponse.header.resultCode, 0) }
+            { assertTrue { commentResponse.header.isSuccessful } },
+            { assertEquals(commentResponse.header.resultCode, 0) }
         )
 
         println("✅ 댓글 생성 성공: ${commentResponse.result.id}")
@@ -689,13 +690,13 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // 댓글이 없을 수 있으므로 하나 생성
         val commentRequest =
-                CreateCommentRequest(
-                        body =
-                                PostCommentBody(
-                                        mimeType = "text/html",
-                                        content = "목록 조회 테스트용 댓글 ${System.currentTimeMillis()}"
-                                )
-                )
+            CreateCommentRequest(
+                body =
+                    PostCommentBody(
+                        mimeType = "text/html",
+                        content = "목록 조회 테스트용 댓글 ${System.currentTimeMillis()}"
+                    )
+            )
         doorayClient.createPostComment(testProjectId, postId, commentRequest)
 
         // when - 댓글 목록 조회
@@ -703,8 +704,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { commentsResponse.header.isSuccessful } },
-                { assertEquals(commentsResponse.header.resultCode, 0) }
+            { assertTrue { commentsResponse.header.isSuccessful } },
+            { assertEquals(commentsResponse.header.resultCode, 0) }
         )
 
         println("✅ 댓글 목록 조회 성공: ${commentsResponse.result.size}개")
@@ -722,38 +723,38 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
         // given - 먼저 댓글을 생성
         val postsResponse = doorayClient.getPosts(testProjectId, size = 1)
         val postId =
-                if (postsResponse.result.isNotEmpty()) {
-                    postsResponse.result.first().id
-                } else {
-                    // 업무가 없으면 하나 생성
-                    val createRequest =
-                            CreatePostRequest(
-                                    subject = "[테스트용] 댓글 수정 테스트 업무 ${System.currentTimeMillis()}",
-                                    body =
-                                            PostBody(
-                                                    mimeType = "text/html",
-                                                    content = "댓글 수정 테스트용 업무입니다."
-                                            ),
-                                    users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                                    priority = "normal"
-                            )
-                    val createResponse = doorayClient.createPost(testProjectId, createRequest)
-                    assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
+            if (postsResponse.result.isNotEmpty()) {
+                postsResponse.result.first().id
+            } else {
+                // 업무가 없으면 하나 생성
+                val createRequest =
+                    CreatePostRequest(
+                        subject = "[테스트용] 댓글 수정 테스트 업무 ${System.currentTimeMillis()}",
+                        body =
+                            PostBody(
+                                mimeType = "text/html",
+                                content = "댓글 수정 테스트용 업무입니다."
+                            ),
+                        users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                        priority = "normal"
+                    )
+                val createResponse = doorayClient.createPost(testProjectId, createRequest)
+                assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
 
-                    val createdPostId = createResponse.result.id
-                    createdPostIds.add(createdPostId)
-                    createdPostId
-                }
+                val createdPostId = createResponse.result.id
+                createdPostIds.add(createdPostId)
+                createdPostId
+            }
 
         // 댓글 생성
         val commentRequest =
-                CreateCommentRequest(
-                        body =
-                                PostCommentBody(
-                                        mimeType = "text/html",
-                                        content = "수정 전 댓글 내용 ${System.currentTimeMillis()}"
-                                )
-                )
+            CreateCommentRequest(
+                body =
+                    PostCommentBody(
+                        mimeType = "text/html",
+                        content = "수정 전 댓글 내용 ${System.currentTimeMillis()}"
+                    )
+            )
         val commentResponse = doorayClient.createPostComment(testProjectId, postId, commentRequest)
         assertTrue(commentResponse.header.isSuccessful, "테스트용 댓글 생성에 실패했습니다.")
 
@@ -761,21 +762,21 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // when - 댓글 수정
         val updateRequest =
-                UpdateCommentRequest(
-                        body =
-                                PostCommentBody(
-                                        mimeType = "text/html",
-                                        content = "수정된 댓글 내용 ${System.currentTimeMillis()}"
-                                )
-                )
+            UpdateCommentRequest(
+                body =
+                    PostCommentBody(
+                        mimeType = "text/html",
+                        content = "수정된 댓글 내용 ${System.currentTimeMillis()}"
+                    )
+            )
 
         val updateResponse =
-                doorayClient.updatePostComment(testProjectId, postId, commentId, updateRequest)
+            doorayClient.updatePostComment(testProjectId, postId, commentId, updateRequest)
 
         // then
         assertAll(
-                { assertTrue { updateResponse.header.isSuccessful } },
-                { assertEquals(updateResponse.header.resultCode, 0) }
+            { assertTrue { updateResponse.header.isSuccessful } },
+            { assertEquals(updateResponse.header.resultCode, 0) }
         )
 
         println("✅ 댓글 수정 성공: ${commentId}")
@@ -794,38 +795,38 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
         // given - 먼저 댓글을 생성
         val postsResponse = doorayClient.getPosts(testProjectId, size = 1)
         val postId =
-                if (postsResponse.result.isNotEmpty()) {
-                    postsResponse.result.first().id
-                } else {
-                    // 업무가 없으면 하나 생성
-                    val createRequest =
-                            CreatePostRequest(
-                                    subject = "[테스트용] 댓글 삭제 테스트 업무 ${System.currentTimeMillis()}",
-                                    body =
-                                            PostBody(
-                                                    mimeType = "text/html",
-                                                    content = "댓글 삭제 테스트용 업무입니다."
-                                            ),
-                                    users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                                    priority = "normal"
-                            )
-                    val createResponse = doorayClient.createPost(testProjectId, createRequest)
-                    assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
+            if (postsResponse.result.isNotEmpty()) {
+                postsResponse.result.first().id
+            } else {
+                // 업무가 없으면 하나 생성
+                val createRequest =
+                    CreatePostRequest(
+                        subject = "[테스트용] 댓글 삭제 테스트 업무 ${System.currentTimeMillis()}",
+                        body =
+                            PostBody(
+                                mimeType = "text/html",
+                                content = "댓글 삭제 테스트용 업무입니다."
+                            ),
+                        users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                        priority = "normal"
+                    )
+                val createResponse = doorayClient.createPost(testProjectId, createRequest)
+                assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
 
-                    val createdPostId = createResponse.result.id
-                    createdPostIds.add(createdPostId)
-                    createdPostId
-                }
+                val createdPostId = createResponse.result.id
+                createdPostIds.add(createdPostId)
+                createdPostId
+            }
 
         // 댓글 생성
         val commentRequest =
-                CreateCommentRequest(
-                        body =
-                                PostCommentBody(
-                                        mimeType = "text/html",
-                                        content = "삭제될 댓글 ${System.currentTimeMillis()}"
-                                )
-                )
+            CreateCommentRequest(
+                body =
+                    PostCommentBody(
+                        mimeType = "text/html",
+                        content = "삭제될 댓글 ${System.currentTimeMillis()}"
+                    )
+            )
         val commentResponse = doorayClient.createPostComment(testProjectId, postId, commentRequest)
         assertTrue(commentResponse.header.isSuccessful, "테스트용 댓글 생성에 실패했습니다.")
 
@@ -836,8 +837,8 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
 
         // then
         assertAll(
-                { assertTrue { deleteResponse.header.isSuccessful } },
-                { assertEquals(deleteResponse.header.resultCode, 0) }
+            { assertTrue { deleteResponse.header.isSuccessful } },
+            { assertEquals(deleteResponse.header.resultCode, 0) }
         )
 
         println("✅ 댓글 삭제 성공: ${commentId}")
@@ -859,65 +860,65 @@ class DoorayHttpClientIntegrationTest : BaseIntegrationTest() {
         // given - 댓글이 여러 개 있는 업무를 찾거나 생성
         val postsResponse = doorayClient.getPosts(testProjectId, size = 1)
         val postId =
-                if (postsResponse.result.isNotEmpty()) {
-                    postsResponse.result.first().id
-                } else {
-                    // 업무가 없으면 하나 생성
-                    val createRequest =
-                            CreatePostRequest(
-                                    subject = "[테스트용] 댓글 페이징 테스트 업무 ${System.currentTimeMillis()}",
-                                    body =
-                                            PostBody(
-                                                    mimeType = "text/html",
-                                                    content = "댓글 페이징 테스트용 업무입니다."
-                                            ),
-                                    users = CreatePostUsers(to = emptyList(), cc = emptyList()),
-                                    priority = "normal"
-                            )
-                    val createResponse = doorayClient.createPost(testProjectId, createRequest)
-                    assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
+            if (postsResponse.result.isNotEmpty()) {
+                postsResponse.result.first().id
+            } else {
+                // 업무가 없으면 하나 생성
+                val createRequest =
+                    CreatePostRequest(
+                        subject = "[테스트용] 댓글 페이징 테스트 업무 ${System.currentTimeMillis()}",
+                        body =
+                            PostBody(
+                                mimeType = "text/html",
+                                content = "댓글 페이징 테스트용 업무입니다."
+                            ),
+                        users = CreatePostUsers(to = emptyList(), cc = emptyList()),
+                        priority = "normal"
+                    )
+                val createResponse = doorayClient.createPost(testProjectId, createRequest)
+                assertTrue(createResponse.header.isSuccessful, "테스트용 업무 생성에 실패했습니다.")
 
-                    val createdPostId = createResponse.result.id
-                    createdPostIds.add(createdPostId)
-                    createdPostId
-                }
+                val createdPostId = createResponse.result.id
+                createdPostIds.add(createdPostId)
+                createdPostId
+            }
 
         // 여러 댓글 생성 (페이징 테스트를 위해)
         repeat(3) { index ->
             val commentRequest =
-                    CreateCommentRequest(
-                            body =
-                                    PostCommentBody(
-                                            mimeType = "text/html",
-                                            content =
-                                                    "페이징 테스트 댓글 ${index + 1} - ${System.currentTimeMillis()}"
-                                    )
-                    )
+                CreateCommentRequest(
+                    body =
+                        PostCommentBody(
+                            mimeType = "text/html",
+                            content =
+                                "페이징 테스트 댓글 ${index + 1} - ${System.currentTimeMillis()}"
+                        )
+                )
             doorayClient.createPostComment(testProjectId, postId, commentRequest)
         }
 
         // when - 첫 번째 페이지 조회 (사이즈 2로 제한)
         val firstPageResponse =
-                doorayClient.getPostComments(testProjectId, postId, page = 0, size = 2)
+            doorayClient.getPostComments(testProjectId, postId, page = 0, size = 2)
 
         // then
         assertAll(
-                { assertTrue { firstPageResponse.header.isSuccessful } },
-                { assertEquals(firstPageResponse.header.resultCode, 0) }
+            { assertTrue { firstPageResponse.header.isSuccessful } },
+            { assertEquals(firstPageResponse.header.resultCode, 0) }
         )
 
         println(
-                "✅ 첫 번째 페이지 댓글 조회 성공: 총 ${firstPageResponse.totalCount}개 중 ${firstPageResponse.result.size}개"
+            "✅ 첫 번째 페이지 댓글 조회 성공: 총 ${firstPageResponse.totalCount}개 중 ${firstPageResponse.result.size}개"
         )
 
         // 총 댓글 수가 2개보다 많다면 두 번째 페이지도 조회
         if (firstPageResponse.totalCount > 2) {
             val secondPageResponse =
-                    doorayClient.getPostComments(testProjectId, postId, page = 1, size = 2)
+                doorayClient.getPostComments(testProjectId, postId, page = 1, size = 2)
 
             assertAll(
-                    { assertTrue { secondPageResponse.header.isSuccessful } },
-                    { assertEquals(secondPageResponse.header.resultCode, 0) }
+                { assertTrue { secondPageResponse.header.isSuccessful } },
+                { assertEquals(secondPageResponse.header.resultCode, 0) }
             )
 
             println("✅ 두 번째 페이지 댓글 조회 성공: ${secondPageResponse.result.size}개")

@@ -68,6 +68,7 @@ interface DoorayClient {
             postNumber: String? = null,
             postWorkflowClasses: List<String>? = null,
             postWorkflowIds: List<String>? = null,
+            milestoneIds: List<String>? = null,
             subjects: String? = null,
             createdAt: String? = null,
             updatedAt: String? = null,

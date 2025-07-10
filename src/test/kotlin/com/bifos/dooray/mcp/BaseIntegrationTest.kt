@@ -28,17 +28,17 @@ abstract class BaseIntegrationTest {
         val env = parseEnv()
 
         val baseUrl =
-                env[DOORAY_BASE_URL]
-                        ?: throw IllegalStateException("DOORAY_BASE_URL 환경변수가 설정되지 않았습니다.")
+            env[DOORAY_BASE_URL]
+                ?: throw IllegalStateException("DOORAY_BASE_URL 환경변수가 설정되지 않았습니다.")
         val apiKey =
-                env[DOORAY_API_KEY]
-                        ?: throw IllegalStateException("DOORAY_API_KEY 환경변수가 설정되지 않았습니다.")
+            env[DOORAY_API_KEY]
+                ?: throw IllegalStateException("DOORAY_API_KEY 환경변수가 설정되지 않았습니다.")
         this.testProjectId =
-                env[DOORAY_TEST_PROJECT_ID]
-                        ?: throw IllegalStateException("DOORAY_TEST_PROJECT_ID 환경변수가 설정되지 않았습니다.")
+            env[DOORAY_TEST_PROJECT_ID]
+                ?: throw IllegalStateException("DOORAY_TEST_PROJECT_ID 환경변수가 설정되지 않았습니다.")
         this.testWikiId =
-                env[DOORAY_TEST_WIKI_ID]
-                        ?: throw IllegalStateException("DOORAY_TEST_WIKI_ID 환경변수가 설정되지 않았습니다.")
+            env[DOORAY_TEST_WIKI_ID]
+                ?: throw IllegalStateException("DOORAY_TEST_WIKI_ID 환경변수가 설정되지 않았습니다.")
 
         doorayClient = DoorayHttpClient(baseUrl, apiKey)
     }
