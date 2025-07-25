@@ -20,7 +20,20 @@ NHN Dooray 서비스의 MCP(Model Context Protocol) 서버입니다.
 ```bash
 export DOORAY_API_KEY="your_api_key"
 export DOORAY_BASE_URL="https://api.dooray.com"
+
+# 선택사항: HTTP 로깅 레벨 (기본값: NONE)
+export DOORAY_HTTP_LOG_LEVEL="NONE"  # NONE, INFO, HEADERS, BODY, ALL
 ```
+
+#### HTTP 로깅 설정
+
+- `NONE` (기본값): HTTP 로깅 비활성화 - **MCP 통신 안정성을 위해 권장**
+- `INFO`: 기본 요청/응답 정보만 로깅
+- `HEADERS`: HTTP 헤더 포함 로깅
+- `BODY`: 요청/응답 본문 포함 로깅
+- `ALL`: 모든 HTTP 정보 로깅
+
+> ⚠️ **주의**: MCP 서버는 stdin/stdout을 통해 통신하므로, HTTP 로깅이 활성화되면 프로토콜 통신에 문제가 발생할 수 있습니다. 디버깅 목적으로만 사용하세요.
 
 ### 로컬 실행
 
@@ -32,7 +45,7 @@ export DOORAY_BASE_URL="https://api.dooray.com"
 ./gradlew runLocal
 
 # 또는 직접 실행
-java -jar build/libs/dooray-mcp-server-0.1.6-all.jar
+java -jar build/libs/dooray-mcp-server-0.2.1-all.jar
 ```
 
 ### Docker 실행
@@ -195,7 +208,7 @@ CI=true ./gradlew test
 ./gradlew clean shadowJar
 
 # Docker 이미지 빌드
-docker build -t dooray-mcp:local --build-arg VERSION=0.1.6 .
+docker build -t dooray-mcp:local --build-arg VERSION=0.2.1 .
 ```
 
 ## Docker 멀티 플랫폼 빌드
