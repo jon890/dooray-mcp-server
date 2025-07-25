@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console appender - stderr 사용하여 MCP stdout 통신 방해 방지 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%level] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 환경변수를 통한 로그 레벨 제어 -->
+    <variable name="LOG_LEVEL" value="${DOORAY_LOG_LEVEL:-WARN}" />
+
+    <!-- Root logger - 기본값을 WARN으로 설정하여 불필요한 로그 억제 -->
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <!-- 애플리케이션 로깅 -->
+    <logger name="com.bifos.dooray.mcp" level="INFO" />
+
+    <!-- kotlin-mcp-sdk 로깅 제어 -->
+    <logger name="io.modelcontextprotocol" level="WARN" />
+    
+    <!-- Ktor HTTP 클라이언트 로깅 - 더 세밀한 제어 -->
+    <logger name="io.ktor.client" level="${DOORAY_HTTP_LOG_LEVEL:-WARN}" />
+    <logger name="io.ktor.client.plugins.logging.Logging" level="${DOORAY_HTTP_LOG_LEVEL:-WARN}" />
+    <logger name="io.ktor" level="WARN" />
+    
+    <!-- Netty 로깅 제어 -->
+    <logger name="io.netty" level="WARN" />
+    
+    <!-- Kotlin 관련 로깅 제어 -->
+    <logger name="kotlinx" level="WARN" />
+    <logger name="kotlin" level="WARN" />
+    
+    <!-- 기타 외부 라이브러리 로깅 제어 -->
+    <logger name="org.slf4j" level="WARN" />
+    <logger name="ch.qos.logback" level="WARN" />
+</configuration> 

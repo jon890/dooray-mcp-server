@@ -21,19 +21,26 @@ NHN Dooray 서비스의 MCP(Model Context Protocol) 서버입니다.
 export DOORAY_API_KEY="your_api_key"
 export DOORAY_BASE_URL="https://api.dooray.com"
 
-# 선택사항: HTTP 로깅 레벨 (기본값: NONE)
-export DOORAY_HTTP_LOG_LEVEL="NONE"  # NONE, INFO, HEADERS, BODY, ALL
+# 선택사항: 로깅 레벨 제어
+export DOORAY_LOG_LEVEL="WARN"         # DEBUG, INFO, WARN, ERROR (기본값: WARN)
+export DOORAY_HTTP_LOG_LEVEL="WARN"    # HTTP 클라이언트 로깅 (기본값: WARN)
 ```
 
-#### HTTP 로깅 설정
+#### 로깅 설정
 
-- `NONE` (기본값): HTTP 로깅 비활성화 - **MCP 통신 안정성을 위해 권장**
+**일반 로깅 (`DOORAY_LOG_LEVEL`)**
+
+- `WARN` (기본값): 경고 및 에러만 로깅 - **MCP 통신 안정성을 위해 권장**
+- `INFO`: 일반 정보 포함 로깅
+- `DEBUG`: 상세한 디버그 정보 포함
+
+**HTTP 로깅 (`DOORAY_HTTP_LOG_LEVEL`)**
+
+- `WARN` (기본값): HTTP 에러만 로깅 - **MCP 통신 안정성을 위해 권장**
 - `INFO`: 기본 요청/응답 정보만 로깅
-- `HEADERS`: HTTP 헤더 포함 로깅
-- `BODY`: 요청/응답 본문 포함 로깅
-- `ALL`: 모든 HTTP 정보 로깅
+- `DEBUG`: 상세한 HTTP 정보 로깅
 
-> ⚠️ **주의**: MCP 서버는 stdin/stdout을 통해 통신하므로, HTTP 로깅이 활성화되면 프로토콜 통신에 문제가 발생할 수 있습니다. 디버깅 목적으로만 사용하세요.
+> ⚠️ **중요**: MCP 서버는 stdin/stdout을 통해 통신하므로, 모든 로그는 **stderr**로 출력됩니다. 로깅 레벨을 높이면 프로토콜 통신에는 영향을 주지 않지만, 성능에 영향을 줄 수 있습니다.
 
 ### 로컬 실행
 
