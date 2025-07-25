@@ -34,7 +34,9 @@ fun getWikiPagesTool(): Tool {
                                         }
                                     },
                             required = listOf("project_id")
-                    )
+                    ),
+            outputSchema = null,
+            annotations = null
     )
 }
 

@@ -44,7 +44,9 @@ fun deletePostCommentTool(): Tool {
                         }
                     },
                 required = listOf("project_id", "post_id", "log_id")
-            )
+            ),
+        outputSchema = null,
+        annotations = null
     )
 }
 

@@ -16,7 +16,7 @@ repositories {
     mavenCentral()
 }
 
-val mcpVersion = project.findProperty("mcp.version") as String? ?: "0.5.0"
+val mcpVersion = project.findProperty("mcp.version") as String? ?: "0.6.0"
 val ktorVersion = project.findProperty("ktor.version") as String? ?: "3.1.1"
 val logbackVersion = project.findProperty("logback.version") as String? ?: "1.5.18"
 

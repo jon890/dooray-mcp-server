@@ -73,7 +73,9 @@ fun createProjectPostTool(): Tool {
                         }
                     },
                 required = listOf("project_id", "subject", "body", "to_member_ids")
-            )
+            ),
+        outputSchema = null,
+        annotations = null
     )
 }
 

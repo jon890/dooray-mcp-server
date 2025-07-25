@@ -51,7 +51,9 @@ fun createPostCommentTool(): Tool {
                         }
                     },
                 required = listOf("project_id", "post_id", "content")
-            )
+            ),
+        outputSchema = null,
+        annotations = null
     )
 }
 

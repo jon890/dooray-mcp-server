@@ -55,7 +55,9 @@ fun getPostCommentsTool(): Tool {
                         }
                     },
                 required = listOf("project_id", "post_id")
-            )
+            ),
+        outputSchema = null,
+        annotations = null
     )
 }
 

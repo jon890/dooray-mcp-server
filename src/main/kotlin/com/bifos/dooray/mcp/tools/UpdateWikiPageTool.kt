@@ -54,7 +54,9 @@ fun updateWikiPageTool(): Tool {
                         }
                     },
                 required = listOf("wiki_id", "page_id")
-            )
+            ),
+        outputSchema = null,
+        annotations = null
     )
 }
 

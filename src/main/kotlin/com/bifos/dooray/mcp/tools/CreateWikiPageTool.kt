@@ -27,7 +27,7 @@ fun createWikiPageTool(): Tool {
                                             put("type", "string")
                                             put(
                                                     "description",
-                                                    "위키 ID (dooray_wiki_list_projects로 조회 가능)"
+                                                "위키 ID (dooray_wiki_list_projects로 조회 가능)"
                                             )
                                         }
                                         putJsonObject("subject") {
@@ -47,7 +47,9 @@ fun createWikiPageTool(): Tool {
                                         }
                                     },
                             required = listOf("wiki_id", "subject", "body", "parent_page_id")
-                    )
+                    ),
+            outputSchema = null,
+            annotations = null
     )
 }
 
