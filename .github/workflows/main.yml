@@ -8,8 +8,6 @@ on:
 env:
   REGISTRY: docker.io
   IMAGE_NAME: bifos/dooray-mcp
-  # ARM64 빌드 활성화 여부 (ARM64 빌드에 문제가 있을 때 false로 설정)
-  ENABLE_ARM64: false
 
 jobs:
   build:
@@ -137,6 +135,9 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -149,13 +150,12 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (Multi-platform)
         id: push
         uses: docker/build-push-action@v5
         with:
           context: .
-          # ARM64 빌드 활성화 여부에 따라 플랫폼 결정
-          platforms: ${{ env.ENABLE_ARM64 == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
