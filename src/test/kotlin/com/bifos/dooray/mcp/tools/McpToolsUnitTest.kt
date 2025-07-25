@@ -414,4 +414,311 @@ class McpToolsUnitTest {
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "NO_UPDATE_CONTENT")
     }
+
+    // === 댓글 관련 도구 테스트 ===
+
+    @Test
+    @DisplayName("업무 댓글 목록 조회 도구 - 성공 케이스")
+    fun testGetPostCommentsHandlerSuccess() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockComments =
+            listOf(
+                PostComment(
+                    id = "comment1",
+                    post = PostInfo(id = "post1"),
+                    type = "comment",
+                    subtype = "general",
+                    createdAt = "2025-01-25T10:00:00+09:00",
+                    modifiedAt = null,
+                    creator =
+                        PostUser(
+                            type = "member",
+                            member = Member(organizationMemberId = "member1")
+                        ),
+                    mailUsers = null,
+                    body =
+                        PostCommentBody(
+                            mimeType = "text/html",
+                            content = "테스트 댓글입니다."
+                        ),
+                    files = null
+                )
+            )
+        val mockResponse =
+            PostCommentListResponse(
+                header =
+                    DoorayApiHeader(
+                        isSuccessful = true,
+                        resultCode = 0,
+                        resultMessage = "success"
+                    ),
+                result = mockComments,
+                totalCount = 1
+            )
+
+        coEvery { mockDoorayClient.getPostComments(any(), any(), any(), any(), any()) } returns
+                mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "project1")
+                    put("post_id", "post1")
+                    put("page", 0)
+                    put("size", 10)
+                }
+
+        // when
+        val handler = getPostCommentsHandler(mockDoorayClient)
+        val result = handler(mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text ?: ""
+        assertContains(responseText, "\"success\": true")
+        assertContains(responseText, "\"comments\":")
+        assertContains(responseText, "\"totalCount\": 1")
+        assertContains(responseText, "\"currentPage\": 0")
+        assertContains(responseText, "\"pageSize\": 10")
+        assertContains(responseText, "테스트 댓글입니다")
+    }
+
+    @Test
+    @DisplayName("업무 댓글 목록 조회 도구 - project_id 누락 에러")
+    fun testGetPostCommentsHandlerMissingProjectId() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("post_id", "post1")
+                    // project_id 누락
+                }
+
+        // when
+        val handler = getPostCommentsHandler(mockDoorayClient)
+        val result = handler(mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text ?: ""
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "MISSING_PROJECT_ID")
+    }
+
+    @Test
+    @DisplayName("업무 댓글 목록 조회 도구 - post_id 누락 에러")
+    fun testGetPostCommentsHandlerMissingPostId() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "project1")
+                    // post_id 누락
+                }
+
+        // when
+        val handler = getPostCommentsHandler(mockDoorayClient)
+        val result = handler(mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text ?: ""
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "MISSING_POST_ID")
+    }
+
+    @Test
+    @DisplayName("업무 댓글 목록 조회 도구 - API 에러 케이스")
+    fun testGetPostCommentsHandlerApiError() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockResponse =
+            PostCommentListResponse(
+                header =
+                    DoorayApiHeader(
+                        isSuccessful = false,
+                        resultCode = 404,
+                        resultMessage = "Post not found"
+                    ),
+                result = emptyList(),
+                totalCount = 0
+            )
+
+        coEvery { mockDoorayClient.getPostComments(any(), any(), any(), any(), any()) } returns
+                mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "project1")
+                    put("post_id", "invalid_post_id")
+                }
+
+        // when
+        val handler = getPostCommentsHandler(mockDoorayClient)
+        val result = handler(mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text ?: ""
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "Post not found")
+        assertContains(responseText, "DOORAY_API_404")
+    }
+
+    @Test
+    @DisplayName("업무 댓글 생성 도구 - 성공 케이스")
+    fun testCreatePostCommentHandlerSuccess() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockResponse =
+            CreateCommentApiResponse(
+                header =
+                    DoorayApiHeader(
+                        isSuccessful = true,
+                        resultCode = 0,
+                        resultMessage = "success"
+                    ),
+                result = CreateCommentResponse(id = "comment1")
+            )
+
+        coEvery { mockDoorayClient.createPostComment(any(), any(), any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "project1")
+                    put("post_id", "post1")
+                    put("content", "새 댓글 내용")
+                }
+
+        // when
+        val handler = createPostCommentHandler(mockDoorayClient)
+        val result = handler(mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text ?: ""
+        assertContains(responseText, "\"success\": true")
+        assertContains(responseText, "성공적으로 생성")
+    }
+
+    @Test
+    @DisplayName("업무 댓글 생성 도구 - content 누락 에러")
+    fun testCreatePostCommentHandlerMissingContent() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "project1")
+                    put("post_id", "post1")
+                    // content 누락
+                }
+
+        // when
+        val handler = createPostCommentHandler(mockDoorayClient)
+        val result = handler(mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text ?: ""
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "MISSING_CONTENT")
+    }
+
+    @Test
+    @DisplayName("업무 댓글 수정 도구 - 성공 케이스")
+    fun testUpdatePostCommentHandlerSuccess() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockResponse =
+            UpdateCommentResponse(
+                header =
+                    DoorayApiHeader(
+                        isSuccessful = true,
+                        resultCode = 0,
+                        resultMessage = "success"
+                    ),
+                result = null
+            )
+
+        coEvery { mockDoorayClient.updatePostComment(any(), any(), any(), any()) } returns
+                mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "project1")
+                    put("post_id", "post1")
+                    put("log_id", "comment1")
+                    put("content", "수정된 댓글 내용")
+                }
+
+        // when
+        val handler = updatePostCommentHandler(mockDoorayClient)
+        val result = handler(mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text ?: ""
+        assertContains(responseText, "\"success\": true")
+        assertContains(responseText, "성공적으로 수정")
+    }
+
+    @Test
+    @DisplayName("업무 댓글 삭제 도구 - 성공 케이스")
+    fun testDeletePostCommentHandlerSuccess() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockResponse =
+            DeleteCommentResponse(
+                header =
+                    DoorayApiHeader(
+                        isSuccessful = true,
+                        resultCode = 0,
+                        resultMessage = "success"
+                    ),
+                result = null
+            )
+
+        coEvery { mockDoorayClient.deletePostComment(any(), any(), any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "project1")
+                    put("post_id", "post1")
+                    put("log_id", "comment1")
+                }
+
+        // when
+        val handler = deletePostCommentHandler(mockDoorayClient)
+        val result = handler(mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text ?: ""
+        assertContains(responseText, "\"success\": true")
+        assertContains(responseText, "성공적으로 삭제")
+    }
 }
