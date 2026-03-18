@@ -44,3 +44,7 @@ bin/
 ### env ###
 .env
 !.env.sample
+
+### claude code, oh-my-claude-code ###
+.claude/settings.local.json
+.omc
