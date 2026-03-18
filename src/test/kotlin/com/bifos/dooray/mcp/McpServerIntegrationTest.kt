@@ -8,12 +8,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
-import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assumptions.assumeTrue
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.DisplayName
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -86,7 +82,7 @@ class McpServerIntegrationTest {
     @Test
     @DisplayName("서버가 16개 도구를 모두 등록해야 한다")
     fun `server should register all 16 tools`(): Unit = runBlocking {
-        val tools = client.listTools()?.tools
+        val tools = client.listTools().tools
         assertNotNull(tools, "listTools() 응답이 null입니다")
         assertEquals(16, tools.size, "도구 수가 16개여야 합니다. 실제: ${tools.map { it.name }}")
     }
@@ -94,7 +90,7 @@ class McpServerIntegrationTest {
     @Test
     @DisplayName("모든 도구 이름이 올바르게 등록되어야 한다")
     fun `server should register tools with correct names`(): Unit = runBlocking {
-        val toolNames = client.listTools()?.tools?.map { it.name } ?: emptyList()
+        val toolNames = client.listTools().tools.map { it.name }
         EXPECTED_TOOLS.forEach { expected ->
             assertContains(toolNames, expected, "도구 '$expected'가 등록되지 않았습니다")
         }
@@ -103,7 +99,7 @@ class McpServerIntegrationTest {
     @Test
     @DisplayName("각 도구에 description이 있어야 한다")
     fun `each tool should have a description`(): Unit = runBlocking {
-        val tools = client.listTools()?.tools ?: emptyList()
+        val tools = client.listTools().tools
         tools.forEach { tool ->
             assertTrue(
                 !tool.description.isNullOrBlank(),
@@ -115,7 +111,7 @@ class McpServerIntegrationTest {
     @Test
     @DisplayName("각 도구에 inputSchema가 있어야 한다")
     fun `each tool should have an input schema`(): Unit = runBlocking {
-        val tools = client.listTools()?.tools ?: emptyList()
+        val tools = client.listTools().tools
         tools.forEach { tool ->
             assertNotNull(tool.inputSchema, "도구 '${tool.name}'에 inputSchema가 없습니다")
         }
@@ -124,14 +120,14 @@ class McpServerIntegrationTest {
     @Test
     @DisplayName("위키 관련 도구는 5개여야 한다")
     fun `wiki tools should be 5`(): Unit = runBlocking {
-        val wikiTools = client.listTools()?.tools?.filter { it.name.startsWith("dooray_wiki_") }
-        assertEquals(5, wikiTools?.size, "위키 도구가 5개여야 합니다")
+        val wikiTools = client.listTools().tools.filter { it.name.startsWith("dooray_wiki_") }
+        assertEquals(5, wikiTools.size, "위키 도구가 5개여야 합니다")
     }
 
     @Test
     @DisplayName("프로젝트 관련 도구는 11개여야 한다")
     fun `project tools should be 11`(): Unit = runBlocking {
-        val projectTools = client.listTools()?.tools?.filter { it.name.startsWith("dooray_project_") }
-        assertEquals(11, projectTools?.size, "프로젝트 도구가 11개여야 합니다")
+        val projectTools = client.listTools().tools.filter { it.name.startsWith("dooray_project_") }
+        assertEquals(11, projectTools.size, "프로젝트 도구가 11개여야 합니다")
     }
 }
