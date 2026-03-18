@@ -67,7 +67,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "테스트 위키")
     }
@@ -101,7 +101,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "Bad Request")
     }
@@ -150,7 +150,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "테스트 페이지")
     }
@@ -171,7 +171,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_PROJECT_ID")
     }
@@ -223,7 +223,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "TEST")
     }
@@ -245,7 +245,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_PROJECT_ID")
     }
@@ -291,7 +291,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 생성")
     }
@@ -318,7 +318,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_WIKI_ID")
     }
@@ -363,7 +363,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 생성")
     }
@@ -391,7 +391,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_TO_MEMBER_IDS")
     }
@@ -417,7 +417,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "NO_UPDATE_CONTENT")
     }
@@ -486,7 +486,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "\"comments\":")
         assertContains(responseText, "\"totalCount\": 1")
@@ -516,7 +516,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_PROJECT_ID")
     }
@@ -542,7 +542,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_POST_ID")
     }
@@ -584,7 +584,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "Post not found")
         assertContains(responseText, "DOORAY_API_404")
@@ -626,7 +626,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 생성")
     }
@@ -653,7 +653,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_CONTENT")
     }
@@ -696,7 +696,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 수정")
     }
@@ -737,7 +737,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 삭제")
     }
