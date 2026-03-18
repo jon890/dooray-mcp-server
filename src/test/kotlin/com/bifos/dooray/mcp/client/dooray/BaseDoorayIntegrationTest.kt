@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.TestInstance
 
 /** Dooray Http Client 통합 테스트를 위한 추상 베이스 클래스 실제 HTTP 요청을 보내므로 환경변수가 설정되어야 함 */
-@Tag("integration")
+@Tag("dooray-integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseDoorayIntegrationTest {
 

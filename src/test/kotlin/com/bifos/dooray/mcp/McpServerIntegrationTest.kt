@@ -24,7 +24,7 @@ import kotlin.test.assertTrue
  *
  * 실행 전 shadowJar 빌드 필요: ./gradlew shadowJar
  */
-@Tag("integration")
+@Tag("mcp-integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("MCP Server 통합 테스트")
 class McpServerIntegrationTest {
