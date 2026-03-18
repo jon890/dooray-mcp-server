@@ -1,8 +1,10 @@
 package com.bifos.dooray.mcp.service
 
 import com.bifos.dooray.mcp.client.DoorayClient
+import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_PROJECT_CACHE_TTL_MINUTES
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.Project
+import com.bifos.dooray.mcp.utils.Env
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.slf4j.LoggerFactory
@@ -18,7 +20,7 @@ class ProjectResolver(private val doorayClient: DoorayClient) {
     private val mutex = Mutex()
     private var lastRefreshTime: Instant = Instant.EPOCH
     private val ttl: Duration = Duration.ofMinutes(
-        System.getenv("DOORAY_PROJECT_CACHE_TTL_MINUTES")?.toLongOrNull() ?: 5L
+        Env.getLong(DOORAY_PROJECT_CACHE_TTL_MINUTES, default = 5L)
     )
 
     suspend fun resolveProjectId(input: String): String {

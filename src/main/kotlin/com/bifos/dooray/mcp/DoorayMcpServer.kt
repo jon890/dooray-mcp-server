@@ -6,6 +6,7 @@ import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_BASE_URL
 import com.bifos.dooray.mcp.constants.VersionConst
 import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.tools.*
+import com.bifos.dooray.mcp.utils.Env
 import io.ktor.utils.io.streams.*
 import io.modelcontextprotocol.kotlin.sdk.types.*
 import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
@@ -73,12 +74,8 @@ class DoorayMcpServer {
     }
 
     fun getEnv(): Map<String, String> {
-        val baseUrl =
-            System.getenv(DOORAY_BASE_URL)
-                ?: throw IllegalArgumentException("DOORAY_BASE_URL is required.")
-        val apiKey =
-            System.getenv(DOORAY_API_KEY)
-                ?: throw IllegalArgumentException("DOORAY_API_KEY is required.")
+        val baseUrl = Env.require(DOORAY_BASE_URL)
+        val apiKey = Env.require(DOORAY_API_KEY)
 
         return mapOf(
             DOORAY_BASE_URL to baseUrl,
