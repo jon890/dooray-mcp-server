@@ -10,7 +10,7 @@ application {
 }
 
 group = "com.bifos.dooray.mcp"
-version = project.findProperty("project.version") as String? ?: "0.1.5"
+version = project.findProperty("project.version") as String? ?: "0.3.0"
 
 repositories {
     mavenCentral()
@@ -31,17 +31,36 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
-
-    // GitHub Actions 환경에서는 통합 테스트 제외
-    if (System.getenv("CI") == "true") {
-        exclude("**/*IntegrationTest*")
-        println("CI 환경에서는 통합 테스트를 제외합니다.")
+    useJUnitPlatform {
+        // CI 환경에서는 통합 테스트 제외
+        if (System.getenv("CI") == "true") {
+            excludeTags("dooray-integration", "mcp-integration")
+        }
     }
 }
 
 kotlin {
     jvmToolchain(21)
+}
+
+tasks.register<Test>("testDoorayIntegration") {
+    description = "Dooray API 통합 테스트 실행 (실제 API 호출, 환경변수 필요)"
+    group = "verification"
+
+    useJUnitPlatform {
+        includeTags("dooray-integration")
+    }
+}
+
+tasks.register<Test>("testMcpIntegration") {
+    description = "MCP 서버 통합 테스트 실행 (shadowJar 빌드 필요)"
+    group = "verification"
+
+    dependsOn("shadowJar")
+
+    useJUnitPlatform {
+        includeTags("mcp-integration")
+    }
 }
 
 tasks.register<JavaExec>("runLocal") {

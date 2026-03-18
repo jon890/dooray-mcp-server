@@ -2,6 +2,7 @@ package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
+import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
@@ -25,10 +26,7 @@ fun deletePostCommentTool(): Tool {
                     buildJsonObject {
                         putJsonObject("project_id") {
                             put("type", "string")
-                            put(
-                                "description",
-                                "프로젝트 ID (dooray_project_list_projects로 조회 가능)"
-                            )
+                            put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
                         }
                         putJsonObject("post_id") {
                             put("type", "string")
@@ -53,15 +51,16 @@ fun deletePostCommentTool(): Tool {
 }
 
 fun deletePostCommentHandler(
-    doorayClient: DoorayClient
+    doorayClient: DoorayClient,
+    projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
     return handler@{ _, request ->
         try {
-            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val projectInput = request.arguments?.get("project_id")?.jsonPrimitive?.content
             val postId = request.arguments?.get("post_id")?.jsonPrimitive?.content
             val logId = request.arguments?.get("log_id")?.jsonPrimitive?.content
 
-            if (projectId.isNullOrBlank()) {
+            if (projectInput.isNullOrBlank()) {
                 val errorResponse =
                     ToolException(
                         type = ToolException.PARAMETER_MISSING,
@@ -101,6 +100,12 @@ fun deletePostCommentHandler(
                 return@handler CallToolResult(
                     content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
                 )
+            }
+
+            val projectId = try {
+                projectResolver.resolveProjectId(projectInput)
+            } catch (e: ToolException) {
+                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(e.toErrorResponse()))))
             }
 
             val response = doorayClient.deletePostComment(projectId, postId, logId)

@@ -1,6 +1,7 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
+import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.*
 import io.mockk.coEvery
 import io.mockk.every
@@ -66,7 +67,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "테스트 위키")
     }
@@ -100,7 +101,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "Bad Request")
     }
@@ -149,7 +150,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "테스트 페이지")
     }
@@ -170,7 +171,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_PROJECT_ID")
     }
@@ -215,13 +216,14 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getProjectsHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+        val handler = getProjectsHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "TEST")
     }
@@ -236,13 +238,14 @@ class McpToolsUnitTest {
         every { mockRequest.arguments } returns buildJsonObject {} // project_id 누락
 
         // when
-        val handler = getProjectPostsHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+        val handler = getProjectPostsHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_PROJECT_ID")
     }
@@ -288,7 +291,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 생성")
     }
@@ -315,7 +318,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_WIKI_ID")
     }
@@ -352,13 +355,15 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = createProjectPostHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = createProjectPostHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 생성")
     }
@@ -379,13 +384,14 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = createProjectPostHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+        val handler = createProjectPostHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_TO_MEMBER_IDS")
     }
@@ -411,7 +417,7 @@ class McpToolsUnitTest {
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "NO_UPDATE_CONTENT")
     }
@@ -472,13 +478,15 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getPostCommentsHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = getPostCommentsHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "\"comments\":")
         assertContains(responseText, "\"totalCount\": 1")
@@ -501,13 +509,14 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getPostCommentsHandler(mockDoorayClient)
+        val mockProjectResolver1 = mockk<ProjectResolver>(relaxed = true)
+        val handler = getPostCommentsHandler(mockDoorayClient, mockProjectResolver1)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_PROJECT_ID")
     }
@@ -526,13 +535,14 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getPostCommentsHandler(mockDoorayClient)
+        val mockProjectResolver2 = mockk<ProjectResolver>(relaxed = true)
+        val handler = getPostCommentsHandler(mockDoorayClient, mockProjectResolver2)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_POST_ID")
     }
@@ -566,13 +576,15 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getPostCommentsHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = getPostCommentsHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "Post not found")
         assertContains(responseText, "DOORAY_API_404")
@@ -606,13 +618,15 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = createPostCommentHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = createPostCommentHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 생성")
     }
@@ -632,13 +646,14 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = createPostCommentHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+        val handler = createPostCommentHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"isError\": true")
         assertContains(responseText, "MISSING_CONTENT")
     }
@@ -673,13 +688,15 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = updatePostCommentHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = updatePostCommentHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 수정")
     }
@@ -712,13 +729,15 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = deletePostCommentHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = deletePostCommentHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
         val content = result.content.first() as TextContent
-        val responseText = content.text ?: ""
+        val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 삭제")
     }

@@ -10,6 +10,7 @@ import kotlinx.io.asSource
 import kotlinx.io.buffered
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.Tag
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -23,6 +24,7 @@ import kotlin.test.assertTrue
  *
  * 실행 전 shadowJar 빌드 필요: ./gradlew shadowJar
  */
+@Tag("mcp-integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("MCP Server 통합 테스트")
 class McpServerIntegrationTest {

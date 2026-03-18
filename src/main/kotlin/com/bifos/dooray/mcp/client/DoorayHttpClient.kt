@@ -1,7 +1,9 @@
 package com.bifos.dooray.mcp.client
 
+import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_HTTP_LOG_LEVEL
 import com.bifos.dooray.mcp.exception.CustomException
 import com.bifos.dooray.mcp.types.*
+import com.bifos.dooray.mcp.utils.Env
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -52,7 +54,7 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
                         }
                 // 환경변수로 로깅 레벨 제어 (기본: NONE, 디버깅시: INFO)
                 level =
-                        when (System.getenv("DOORAY_HTTP_LOG_LEVEL")?.uppercase()) {
+                        when (Env.get(DOORAY_HTTP_LOG_LEVEL)?.uppercase()) {
                             "ALL" -> LogLevel.ALL
                             "HEADERS" -> LogLevel.HEADERS
                             "BODY" -> LogLevel.BODY

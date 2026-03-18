@@ -2,6 +2,7 @@ package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
+import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
@@ -25,7 +26,7 @@ fun getProjectPostsTool(): Tool {
                     buildJsonObject {
                         putJsonObject("project_id") {
                             put("type", "string")
-                            put("description", "프로젝트 ID (필수)")
+                            put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
                         }
                         putJsonObject("page") {
                             put("type", "integer")
@@ -92,13 +93,14 @@ fun getProjectPostsTool(): Tool {
 }
 
 fun getProjectPostsHandler(
-    doorayClient: DoorayClient
+    doorayClient: DoorayClient,
+    projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
-    return { _, request ->
+    return handler@{ _, request ->
         try {
-            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val projectInput = request.arguments?.get("project_id")?.jsonPrimitive?.content
 
-            if (projectId == null) {
+            if (projectInput == null) {
                 val errorResponse =
                     ToolException(
                         type = ToolException.PARAMETER_MISSING,
@@ -107,87 +109,93 @@ fun getProjectPostsHandler(
                     )
                         .toErrorResponse()
 
-                CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
-            } else {
-                val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
-                val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull() ?: 20
+                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
+            }
 
-                // 배열 파라미터 처리
-                val toMemberIds =
-                    request.arguments?.get("to_member_ids")?.let { element ->
-                        JsonUtils.parseStringArray(element.toString())
-                    }
-                val ccMemberIds =
-                    request.arguments?.get("cc_member_ids")?.let { element ->
-                        JsonUtils.parseStringArray(element.toString())
-                    }
-                val tagIds =
-                    request.arguments?.get("tag_ids")?.let { element ->
-                        JsonUtils.parseStringArray(element.toString())
-                    }
-                val postWorkflowClasses =
-                    request.arguments?.get("post_workflow_classes")?.let { element ->
-                        JsonUtils.parseStringArray(element.toString())
-                    }
-                val milestoneIds =
-                    request.arguments?.get("milestone_ids")?.let { element ->
-                        JsonUtils.parseStringArray(element.toString())
-                    }
+            val projectId = try {
+                projectResolver.resolveProjectId(projectInput)
+            } catch (e: ToolException) {
+                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(e.toErrorResponse()))))
+            }
 
-                // 단일 값 파라미터 처리
-                val parentPostId = request.arguments?.get("parent_post_id")?.jsonPrimitive?.content
-                val subjects = request.arguments?.get("subjects")?.jsonPrimitive?.content
-                val order = request.arguments?.get("order")?.jsonPrimitive?.content
+            val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
+            val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull() ?: 20
 
-                val response =
-                    doorayClient.getPosts(
-                        projectId = projectId,
-                        page = page,
-                        size = size,
-                        toMemberIds = toMemberIds,
-                        ccMemberIds = ccMemberIds,
-                        tagIds = tagIds,
-                        parentPostId = parentPostId,
-                        postWorkflowClasses = postWorkflowClasses,
-                        milestoneIds = milestoneIds,
-                        subjects = subjects,
-                        order = order
-                    )
-
-                if (response.header.isSuccessful) {
-                    val pageInfo = if (page == 0) "첫 번째 페이지" else "${page + 1}번째 페이지"
-
-                    val nextStepHint =
-                        if (response.result.isNotEmpty()) {
-                            "\n\n💡 다음 단계: 특정 업무의 상세 정보를 보려면 dooray_project_get_post를 사용하세요."
-                        } else {
-                            if (page == 0) "\n\n📋 조회 결과가 없습니다. 필터 조건을 확인해주세요."
-                            else "\n\n📄 더 이상 업무가 없습니다."
-                        }
-
-                    val successResponse =
-                        ToolSuccessResponse(
-                            data = response.result,
-                            message =
-                                "📋 프로젝트 업무 목록을 성공적으로 조회했습니다 ($pageInfo, 총 ${response.result.size}개)$nextStepHint"
-                        )
-
-                    CallToolResult(
-                        content = listOf(TextContent(JsonUtils.toJsonString(successResponse)))
-                    )
-                } else {
-                    val errorResponse =
-                        ToolException(
-                            type = ToolException.API_ERROR,
-                            message = response.header.resultMessage,
-                            code = "DOORAY_API_${response.header.resultCode}"
-                        )
-                            .toErrorResponse()
-
-                    CallToolResult(
-                        content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                    )
+            // 배열 파라미터 처리
+            val toMemberIds =
+                request.arguments?.get("to_member_ids")?.let { element ->
+                    JsonUtils.parseStringArray(element.toString())
                 }
+            val ccMemberIds =
+                request.arguments?.get("cc_member_ids")?.let { element ->
+                    JsonUtils.parseStringArray(element.toString())
+                }
+            val tagIds =
+                request.arguments?.get("tag_ids")?.let { element ->
+                    JsonUtils.parseStringArray(element.toString())
+                }
+            val postWorkflowClasses =
+                request.arguments?.get("post_workflow_classes")?.let { element ->
+                    JsonUtils.parseStringArray(element.toString())
+                }
+            val milestoneIds =
+                request.arguments?.get("milestone_ids")?.let { element ->
+                    JsonUtils.parseStringArray(element.toString())
+                }
+
+            // 단일 값 파라미터 처리
+            val parentPostId = request.arguments?.get("parent_post_id")?.jsonPrimitive?.content
+            val subjects = request.arguments?.get("subjects")?.jsonPrimitive?.content
+            val order = request.arguments?.get("order")?.jsonPrimitive?.content
+
+            val response =
+                doorayClient.getPosts(
+                    projectId = projectId,
+                    page = page,
+                    size = size,
+                    toMemberIds = toMemberIds,
+                    ccMemberIds = ccMemberIds,
+                    tagIds = tagIds,
+                    parentPostId = parentPostId,
+                    postWorkflowClasses = postWorkflowClasses,
+                    milestoneIds = milestoneIds,
+                    subjects = subjects,
+                    order = order
+                )
+
+            if (response.header.isSuccessful) {
+                val pageInfo = if (page == 0) "첫 번째 페이지" else "${page + 1}번째 페이지"
+
+                val nextStepHint =
+                    if (response.result.isNotEmpty()) {
+                        "\n\n💡 다음 단계: 특정 업무의 상세 정보를 보려면 dooray_project_get_post를 사용하세요."
+                    } else {
+                        if (page == 0) "\n\n📋 조회 결과가 없습니다. 필터 조건을 확인해주세요."
+                        else "\n\n📄 더 이상 업무가 없습니다."
+                    }
+
+                val successResponse =
+                    ToolSuccessResponse(
+                        data = response.result,
+                        message =
+                            "📋 프로젝트 업무 목록을 성공적으로 조회했습니다 ($pageInfo, 총 ${response.result.size}개)$nextStepHint"
+                    )
+
+                CallToolResult(
+                    content = listOf(TextContent(JsonUtils.toJsonString(successResponse)))
+                )
+            } else {
+                val errorResponse =
+                    ToolException(
+                        type = ToolException.API_ERROR,
+                        message = response.header.resultMessage,
+                        code = "DOORAY_API_${response.header.resultCode}"
+                    )
+                        .toErrorResponse()
+
+                CallToolResult(
+                    content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
+                )
             }
         } catch (e: Exception) {
             val errorResponse =

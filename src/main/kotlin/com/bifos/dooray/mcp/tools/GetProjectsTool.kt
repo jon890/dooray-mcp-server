@@ -2,6 +2,7 @@ package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
+import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
@@ -64,7 +65,10 @@ fun getProjectsTool(): Tool {
     )
 }
 
-fun getProjectsHandler(doorayClient: DoorayClient): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+fun getProjectsHandler(
+        doorayClient: DoorayClient,
+        projectResolver: ProjectResolver
+): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
     return { _, request ->
         try {
             val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull()
@@ -76,6 +80,9 @@ fun getProjectsHandler(doorayClient: DoorayClient): suspend (ClientConnection, C
             val response = doorayClient.getProjects(page, size, type, scope, state)
 
             if (response.header.isSuccessful) {
+                // Side effect: populate cache with fetched projects
+                projectResolver.updateCache(response.result)
+
                 val successResponse =
                         ToolSuccessResponse(
                                 data =
