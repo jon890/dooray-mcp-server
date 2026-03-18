@@ -4,10 +4,12 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -18,7 +20,7 @@ fun getProjectsTool(): Tool {
             name = "dooray_project_list_projects",
             description = "두레이에서 접근 가능한 프로젝트 목록을 조회합니다. 다양한 필터 조건으로 원하는 프로젝트를 찾을 수 있습니다.",
             inputSchema =
-                    Tool.Input(
+                    ToolSchema(
                             properties =
                                     buildJsonObject {
                                         putJsonObject("page") {
@@ -62,14 +64,14 @@ fun getProjectsTool(): Tool {
     )
 }
 
-fun getProjectsHandler(doorayClient: DoorayClient): suspend (CallToolRequest) -> CallToolResult {
-    return { request ->
+fun getProjectsHandler(doorayClient: DoorayClient): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return { _, request ->
         try {
-            val page = request.arguments["page"]?.jsonPrimitive?.content?.toIntOrNull()
-            val size = request.arguments["size"]?.jsonPrimitive?.content?.toIntOrNull()
-            val type = request.arguments["type"]?.jsonPrimitive?.content
-            val scope = request.arguments["scope"]?.jsonPrimitive?.content
-            val state = request.arguments["state"]?.jsonPrimitive?.content
+            val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull()
+            val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull()
+            val type = request.arguments?.get("type")?.jsonPrimitive?.content
+            val scope = request.arguments?.get("scope")?.jsonPrimitive?.content
+            val state = request.arguments?.get("state")?.jsonPrimitive?.content
 
             val response = doorayClient.getProjects(page, size, type, scope, state)
 

@@ -4,10 +4,12 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -18,7 +20,7 @@ fun getProjectPostsTool(): Tool {
         name = "dooray_project_list_posts",
         description = "두레이 프로젝트의 업무 목록을 조회합니다. 다양한 필터 조건과 정렬 옵션을 지원합니다.",
         inputSchema =
-            Tool.Input(
+            ToolSchema(
                 properties =
                     buildJsonObject {
                         putJsonObject("project_id") {
@@ -91,10 +93,10 @@ fun getProjectPostsTool(): Tool {
 
 fun getProjectPostsHandler(
     doorayClient: DoorayClient
-): suspend (CallToolRequest) -> CallToolResult {
-    return { request ->
+): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return { _, request ->
         try {
-            val projectId = request.arguments["project_id"]?.jsonPrimitive?.content
+            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
 
             if (projectId == null) {
                 val errorResponse =
@@ -107,35 +109,35 @@ fun getProjectPostsHandler(
 
                 CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
             } else {
-                val page = request.arguments["page"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0
-                val size = request.arguments["size"]?.jsonPrimitive?.content?.toIntOrNull() ?: 20
+                val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
+                val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull() ?: 20
 
                 // 배열 파라미터 처리
                 val toMemberIds =
-                    request.arguments["to_member_ids"]?.let { element ->
+                    request.arguments?.get("to_member_ids")?.let { element ->
                         JsonUtils.parseStringArray(element.toString())
                     }
                 val ccMemberIds =
-                    request.arguments["cc_member_ids"]?.let { element ->
+                    request.arguments?.get("cc_member_ids")?.let { element ->
                         JsonUtils.parseStringArray(element.toString())
                     }
                 val tagIds =
-                    request.arguments["tag_ids"]?.let { element ->
+                    request.arguments?.get("tag_ids")?.let { element ->
                         JsonUtils.parseStringArray(element.toString())
                     }
                 val postWorkflowClasses =
-                    request.arguments["post_workflow_classes"]?.let { element ->
+                    request.arguments?.get("post_workflow_classes")?.let { element ->
                         JsonUtils.parseStringArray(element.toString())
                     }
                 val milestoneIds =
-                    request.arguments["milestone_ids"]?.let { element ->
+                    request.arguments?.get("milestone_ids")?.let { element ->
                         JsonUtils.parseStringArray(element.toString())
                     }
 
                 // 단일 값 파라미터 처리
-                val parentPostId = request.arguments["parent_post_id"]?.jsonPrimitive?.content
-                val subjects = request.arguments["subjects"]?.jsonPrimitive?.content
-                val order = request.arguments["order"]?.jsonPrimitive?.content
+                val parentPostId = request.arguments?.get("parent_post_id")?.jsonPrimitive?.content
+                val subjects = request.arguments?.get("subjects")?.jsonPrimitive?.content
+                val order = request.arguments?.get("order")?.jsonPrimitive?.content
 
                 val response =
                     doorayClient.getPosts(

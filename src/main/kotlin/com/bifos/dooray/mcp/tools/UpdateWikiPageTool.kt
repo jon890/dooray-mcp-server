@@ -4,10 +4,12 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.*
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.*
 
 fun updateWikiPageTool(): Tool {
@@ -16,7 +18,7 @@ fun updateWikiPageTool(): Tool {
         description =
             "기존 두레이 위키 페이지를 수정합니다. 제목, 내용, 참조자 등을 변경할 수 있습니다. 변경되지 않은 필드는 기존 값을 유지합니다.",
         inputSchema =
-            Tool.Input(
+            ToolSchema(
                 properties =
                     buildJsonObject {
                         putJsonObject("wiki_id") {
@@ -68,8 +70,8 @@ data class UpdateWikiPageParams(
     val referrerMemberIds: List<String>?
 )
 
-fun updateWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest) -> CallToolResult {
-    return { request ->
+fun updateWikiPageHandler(doorayClient: DoorayClient): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return { _, request ->
         try {
             val validationResult = validateUpdateWikiPageParams(request)
             if (validationResult != null) {
@@ -94,12 +96,12 @@ fun updateWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest)
 
 /** 파라미터 검증 */
 private fun validateUpdateWikiPageParams(request: CallToolRequest): CallToolResult? {
-    val wikiId = request.arguments["wiki_id"]?.jsonPrimitive?.content
-    val pageId = request.arguments["page_id"]?.jsonPrimitive?.content
-    val newSubject = request.arguments["subject"]?.jsonPrimitive?.content
-    val newBodyContent = request.arguments["body"]?.jsonPrimitive?.content
+    val wikiId = request.arguments?.get("wiki_id")?.jsonPrimitive?.content
+    val pageId = request.arguments?.get("page_id")?.jsonPrimitive?.content
+    val newSubject = request.arguments?.get("subject")?.jsonPrimitive?.content
+    val newBodyContent = request.arguments?.get("body")?.jsonPrimitive?.content
     val referrerMemberIds =
-        request.arguments["referrer_member_ids"]?.jsonArray?.map { it.jsonPrimitive.content }
+        request.arguments?.get("referrer_member_ids")?.jsonArray?.map { it.jsonPrimitive.content }
 
     return when {
         wikiId == null -> {
@@ -147,12 +149,12 @@ private fun validateUpdateWikiPageParams(request: CallToolRequest): CallToolResu
 
 /** 파라미터 추출 */
 private fun extractUpdateWikiPageParams(request: CallToolRequest): UpdateWikiPageParams {
-    val wikiId = request.arguments["wiki_id"]?.jsonPrimitive?.content!!
-    val pageId = request.arguments["page_id"]?.jsonPrimitive?.content!!
-    val newSubject = request.arguments["subject"]?.jsonPrimitive?.content
-    val newBodyContent = request.arguments["body"]?.jsonPrimitive?.content
+    val wikiId = request.arguments?.get("wiki_id")?.jsonPrimitive?.content!!
+    val pageId = request.arguments?.get("page_id")?.jsonPrimitive?.content!!
+    val newSubject = request.arguments?.get("subject")?.jsonPrimitive?.content
+    val newBodyContent = request.arguments?.get("body")?.jsonPrimitive?.content
     val referrerMemberIds =
-        request.arguments["referrer_member_ids"]?.jsonArray?.map { it.jsonPrimitive.content }
+        request.arguments?.get("referrer_member_ids")?.jsonArray?.map { it.jsonPrimitive.content }
 
     return UpdateWikiPageParams(
         wikiId = wikiId,

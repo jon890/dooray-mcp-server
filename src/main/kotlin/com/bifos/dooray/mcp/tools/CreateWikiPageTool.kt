@@ -6,10 +6,12 @@ import com.bifos.dooray.mcp.types.CreateWikiPageRequest
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.types.WikiPageBody
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -20,7 +22,7 @@ fun createWikiPageTool(): Tool {
             name = "dooray_wiki_create_page",
             description = "새로운 두레이 위키 페이지를 생성합니다. 제목과 내용을 입력하여 새 페이지를 만들 수 있습니다.",
             inputSchema =
-                    Tool.Input(
+                    ToolSchema(
                             properties =
                                     buildJsonObject {
                                         putJsonObject("wiki_id") {
@@ -53,13 +55,13 @@ fun createWikiPageTool(): Tool {
     )
 }
 
-fun createWikiPageHandler(doorayClient: DoorayClient): suspend (CallToolRequest) -> CallToolResult {
-    return { request ->
+fun createWikiPageHandler(doorayClient: DoorayClient): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return { _, request ->
         try {
-            val wikiId = request.arguments["wiki_id"]?.jsonPrimitive?.content
-            val subject = request.arguments["subject"]?.jsonPrimitive?.content
-            val body = request.arguments["body"]?.jsonPrimitive?.content
-            val parentPageId = request.arguments["parent_page_id"]?.jsonPrimitive?.content
+            val wikiId = request.arguments?.get("wiki_id")?.jsonPrimitive?.content
+            val subject = request.arguments?.get("subject")?.jsonPrimitive?.content
+            val body = request.arguments?.get("body")?.jsonPrimitive?.content
+            val parentPageId = request.arguments?.get("parent_page_id")?.jsonPrimitive?.content
 
             when {
                 wikiId == null -> {

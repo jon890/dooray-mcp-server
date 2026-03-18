@@ -6,7 +6,8 @@ import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_BASE_URL
 import com.bifos.dooray.mcp.constants.VersionConst
 import com.bifos.dooray.mcp.tools.*
 import io.ktor.utils.io.streams.*
-import io.modelcontextprotocol.kotlin.sdk.*
+import io.modelcontextprotocol.kotlin.sdk.types.*
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
@@ -58,7 +59,7 @@ class DoorayMcpServer {
         log.info("Starting MCP server on STDIO transport...")
 
         runBlocking {
-            server.connect(transport)
+            server.createSession(transport)
             log.info("MCP server connected and ready!")
 
             val done = Job()
@@ -89,13 +90,8 @@ class DoorayMcpServer {
 
         var toolCount = 0
 
-        fun addTool(tool: Tool, handler: suspend (CallToolRequest) -> CallToolResult) {
-            server.addTool(
-                name = tool.name,
-                description = tool.description ?: "",
-                inputSchema = tool.inputSchema,
-                handler = handler
-            )
+        fun addTool(tool: Tool, handler: suspend (ClientConnection, CallToolRequest) -> CallToolResult) {
+            server.addTool(tool, handler)
             toolCount++
         }
 

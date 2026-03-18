@@ -4,10 +4,12 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -18,7 +20,7 @@ fun getWikiPagesTool(): Tool {
             name = "dooray_wiki_list_pages",
             description = "특정 두레이 위키 프로젝트의 페이지 목록을 조회합니다. 전체 목록 또는 특정 부모 페이지의 하위 페이지들을 조회할 수 있습니다.",
             inputSchema =
-                    Tool.Input(
+                    ToolSchema(
                             properties =
                                     buildJsonObject {
                                         putJsonObject("project_id") {
@@ -40,11 +42,11 @@ fun getWikiPagesTool(): Tool {
     )
 }
 
-fun getWikiPagesHandler(doorayClient: DoorayClient): suspend (CallToolRequest) -> CallToolResult {
-    return { request ->
+fun getWikiPagesHandler(doorayClient: DoorayClient): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return { _, request ->
         try {
-            val projectId = request.arguments["project_id"]?.jsonPrimitive?.content
-            val parentPageId = request.arguments["parent_page_id"]?.jsonPrimitive?.content
+            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val parentPageId = request.arguments?.get("parent_page_id")?.jsonPrimitive?.content
 
             when {
                 projectId == null -> {

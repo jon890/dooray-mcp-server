@@ -4,10 +4,12 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -19,7 +21,7 @@ fun setProjectPostDoneTool(): Tool {
         description =
             "두레이 프로젝트 업무를 완료 상태로 변경합니다. 완료 클래스 내의 대표 상태로 변경되며, 모든 담당자의 상태가 완료로 변경됩니다.",
         inputSchema =
-            Tool.Input(
+            ToolSchema(
                 properties =
                     buildJsonObject {
                         putJsonObject("project_id") {
@@ -43,11 +45,11 @@ fun setProjectPostDoneTool(): Tool {
 
 fun setProjectPostDoneHandler(
     doorayClient: DoorayClient
-): suspend (CallToolRequest) -> CallToolResult {
-    return { request ->
+): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return { _, request ->
         try {
-            val projectId = request.arguments["project_id"]?.jsonPrimitive?.content
-            val postId = request.arguments["post_id"]?.jsonPrimitive?.content
+            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val postId = request.arguments?.get("post_id")?.jsonPrimitive?.content
 
             when {
                 projectId == null -> {

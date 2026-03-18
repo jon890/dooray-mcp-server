@@ -5,8 +5,9 @@ import com.bifos.dooray.mcp.types.*
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
@@ -60,7 +61,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getWikisHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -94,7 +95,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getWikisHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -143,7 +144,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getWikiPagesHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -164,7 +165,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getWikiPagesHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -215,7 +216,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getProjectsHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -236,7 +237,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getProjectPostsHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -282,7 +283,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = createWikiPageHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -309,7 +310,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = createWikiPageHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -352,7 +353,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = createProjectPostHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -379,7 +380,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = createProjectPostHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -405,7 +406,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = updateWikiPageHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -472,7 +473,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getPostCommentsHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -501,7 +502,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getPostCommentsHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -526,7 +527,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getPostCommentsHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -566,7 +567,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = getPostCommentsHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -606,7 +607,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = createPostCommentHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -632,7 +633,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = createPostCommentHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -673,7 +674,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = updatePostCommentHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())
@@ -712,7 +713,7 @@ class McpToolsUnitTest {
 
         // when
         val handler = deletePostCommentHandler(mockDoorayClient)
-        val result = handler(mockRequest)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
         assertTrue(result.content.isNotEmpty())

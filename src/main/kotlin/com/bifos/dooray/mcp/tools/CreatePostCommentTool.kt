@@ -6,10 +6,12 @@ import com.bifos.dooray.mcp.types.CreateCommentRequest
 import com.bifos.dooray.mcp.types.PostCommentBody
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -20,7 +22,7 @@ fun createPostCommentTool(): Tool {
         name = "dooray_project_create_post_comment",
         description = "두레이 프로젝트 업무에 댓글을 생성합니다. 마크다운 또는 HTML 형식으로 댓글을 작성할 수 있습니다.",
         inputSchema =
-            Tool.Input(
+            ToolSchema(
                 properties =
                     buildJsonObject {
                         putJsonObject("project_id") {
@@ -59,14 +61,14 @@ fun createPostCommentTool(): Tool {
 
 fun createPostCommentHandler(
     doorayClient: DoorayClient
-): suspend (CallToolRequest) -> CallToolResult {
-    return handler@{ request ->
+): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return handler@{ _, request ->
         try {
-            val projectId = request.arguments["project_id"]?.jsonPrimitive?.content
-            val postId = request.arguments["post_id"]?.jsonPrimitive?.content
-            val content = request.arguments["content"]?.jsonPrimitive?.content
+            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val postId = request.arguments?.get("post_id")?.jsonPrimitive?.content
+            val content = request.arguments?.get("content")?.jsonPrimitive?.content
             val mimeType =
-                request.arguments["mime_type"]?.jsonPrimitive?.content ?: "text/x-markdown"
+                request.arguments?.get("mime_type")?.jsonPrimitive?.content ?: "text/x-markdown"
 
             if (projectId.isNullOrBlank()) {
                 val errorResponse =

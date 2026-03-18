@@ -4,10 +4,12 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.*
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.*
 
 fun updateProjectPostTool(): Tool {
@@ -15,7 +17,7 @@ fun updateProjectPostTool(): Tool {
         name = "dooray_project_update_post",
         description = "두레이 프로젝트의 기존 업무를 수정합니다. 제목, 내용, 담당자, 참조자, 우선순위, 마일스톤, 태그 등을 변경할 수 있습니다.",
         inputSchema =
-            Tool.Input(
+            ToolSchema(
                 properties =
                     buildJsonObject {
                         putJsonObject("project_id") {
@@ -83,11 +85,11 @@ fun updateProjectPostTool(): Tool {
 
 fun updateProjectPostHandler(
     doorayClient: DoorayClient
-): suspend (CallToolRequest) -> CallToolResult {
-    return handler@{ request ->
+): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return handler@{ _, request ->
         try {
-            val projectId = request.arguments["project_id"]?.jsonPrimitive?.content
-            val postId = request.arguments["post_id"]?.jsonPrimitive?.content
+            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val postId = request.arguments?.get("post_id")?.jsonPrimitive?.content
 
             if (projectId.isNullOrBlank()) {
                 val errorResponse =
@@ -139,8 +141,8 @@ fun updateProjectPostHandler(
 
             // 선택적 파라미터들 처리
             val subject =
-                request.arguments["subject"]?.jsonPrimitive?.content ?: existingPost.subject
-            val bodyContent = request.arguments["body"]?.jsonPrimitive?.content
+                request.arguments?.get("subject")?.jsonPrimitive?.content ?: existingPost.subject
+            val bodyContent = request.arguments?.get("body")?.jsonPrimitive?.content
             val body =
                 if (bodyContent != null) {
                     PostBody(mimeType = "text/x-markdown", content = bodyContent)
@@ -148,26 +150,26 @@ fun updateProjectPostHandler(
                     existingPost.body
                 }
             val priority =
-                request.arguments["priority"]?.jsonPrimitive?.content ?: existingPost.priority
+                request.arguments?.get("priority")?.jsonPrimitive?.content ?: existingPost.priority
             val milestoneId =
-                request.arguments["milestone_id"]?.jsonPrimitive?.content
+                request.arguments?.get("milestone_id")?.jsonPrimitive?.content
                     ?: existingPost.milestone?.id
             val dueDate =
-                request.arguments["due_date"]?.jsonPrimitive?.content ?: existingPost.dueDate
+                request.arguments?.get("due_date")?.jsonPrimitive?.content ?: existingPost.dueDate
 
             // 담당자와 참조자 처리
             val toMemberIds =
-                request.arguments["to_member_ids"]?.jsonArray?.mapNotNull {
+                request.arguments?.get("to_member_ids")?.jsonArray?.mapNotNull {
                     it.jsonPrimitive.content
                 }
 
             val ccMemberIds =
-                request.arguments["cc_member_ids"]?.jsonArray?.mapNotNull {
+                request.arguments?.get("cc_member_ids")?.jsonArray?.mapNotNull {
                     it.jsonPrimitive.content
                 }
 
             val tagIds =
-                request.arguments["tag_ids"]?.jsonArray?.mapNotNull { it.jsonPrimitive.content }
+                request.arguments?.get("tag_ids")?.jsonArray?.mapNotNull { it.jsonPrimitive.content }
                     ?: existingPost.tags.map { it.id }
 
             // 사용자 정보 구성

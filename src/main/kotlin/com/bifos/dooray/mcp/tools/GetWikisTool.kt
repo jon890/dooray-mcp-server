@@ -4,10 +4,12 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -18,7 +20,7 @@ fun getWikisTool(): Tool {
         name = "dooray_wiki_list_projects",
         description = "두레이에서 접근 가능한 위키 프로젝트 목록을 조회합니다. 특정 프로젝트의 이름으로 프로젝트 ID를 찾을 때 사용하세요.",
         inputSchema =
-            Tool.Input(
+            ToolSchema(
                 properties =
                     buildJsonObject {
                         putJsonObject("page") {
@@ -38,12 +40,12 @@ fun getWikisTool(): Tool {
     )
 }
 
-fun getWikisHandler(doorayClient: DoorayClient): suspend (CallToolRequest) -> CallToolResult {
-    return { request ->
+fun getWikisHandler(doorayClient: DoorayClient): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return { _, request ->
         try {
             // 기본값 처리: page는 0, size는 200
-            val page = request.arguments["page"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0
-            val size = request.arguments["size"]?.jsonPrimitive?.content?.toIntOrNull() ?: 200
+            val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
+            val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull() ?: 200
 
             val response = doorayClient.getWikis(page, size)
 

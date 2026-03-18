@@ -4,10 +4,12 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.*
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -18,7 +20,7 @@ fun createProjectPostTool(): Tool {
         name = "dooray_project_create_post",
         description = "두레이 프로젝트에 새로운 업무를 생성합니다. 담당자, 참조자, 우선순위 등을 설정할 수 있습니다.",
         inputSchema =
-            Tool.Input(
+            ToolSchema(
                 properties =
                     buildJsonObject {
                         putJsonObject("project_id") {
@@ -81,14 +83,14 @@ fun createProjectPostTool(): Tool {
 
 fun createProjectPostHandler(
     doorayClient: DoorayClient
-): suspend (CallToolRequest) -> CallToolResult {
-    return { request ->
+): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return { _, request ->
         try {
-            val projectId = request.arguments["project_id"]?.jsonPrimitive?.content
-            val subject = request.arguments["subject"]?.jsonPrimitive?.content
-            val body = request.arguments["body"]?.jsonPrimitive?.content
+            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val subject = request.arguments?.get("subject")?.jsonPrimitive?.content
+            val body = request.arguments?.get("body")?.jsonPrimitive?.content
             val toMemberIds =
-                request.arguments["to_member_ids"]?.let { element ->
+                request.arguments?.get("to_member_ids")?.let { element ->
                     JsonUtils.parseStringArray(element.toString())
                 }
 
@@ -153,20 +155,20 @@ fun createProjectPostHandler(
                 else -> {
                     // 선택적 파라미터 처리
                     val ccMemberIds =
-                        request.arguments["cc_member_ids"]?.let { element ->
+                        request.arguments?.get("cc_member_ids")?.let { element ->
                             JsonUtils.parseStringArray(element.toString())
                         }
                             ?: emptyList()
 
-                    val parentPostId = request.arguments["parent_post_id"]?.jsonPrimitive?.content
-                    val dueDate = request.arguments["due_date"]?.jsonPrimitive?.content
-                    val milestoneId = request.arguments["milestone_id"]?.jsonPrimitive?.content
+                    val parentPostId = request.arguments?.get("parent_post_id")?.jsonPrimitive?.content
+                    val dueDate = request.arguments?.get("due_date")?.jsonPrimitive?.content
+                    val milestoneId = request.arguments?.get("milestone_id")?.jsonPrimitive?.content
                     val tagIds =
-                        request.arguments["tag_ids"]?.let { element ->
+                        request.arguments?.get("tag_ids")?.let { element ->
                             JsonUtils.parseStringArray(element.toString())
                         }
                             ?: emptyList()
-                    val priority = request.arguments["priority"]?.jsonPrimitive?.content ?: "none"
+                    val priority = request.arguments?.get("priority")?.jsonPrimitive?.content ?: "none"
 
                     // 담당자 목록 생성
                     val toUsers =

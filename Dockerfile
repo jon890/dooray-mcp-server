@@ -1,5 +1,5 @@
 # 멀티스테이지 빌드: 빌드 스테이지
-FROM gradle:8.10-jdk21 AS builder
+FROM gradle:8.13-jdk21 AS builder
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -25,7 +25,7 @@ RUN ./gradlew clean shadowJar --no-daemon
 FROM eclipse-temurin:21-jre-alpine
 
 # 버전을 빌드 인수로 받기
-ARG VERSION=0.1.7
+ARG VERSION=0.2.1
 ENV APP_VERSION=${VERSION}
 
 # 메타데이터 라벨

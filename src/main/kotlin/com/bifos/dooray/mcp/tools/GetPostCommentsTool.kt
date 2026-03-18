@@ -5,10 +5,12 @@ import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.PostCommentsResponseData
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -19,7 +21,7 @@ fun getPostCommentsTool(): Tool {
             name = "dooray_project_get_post_comments",
             description = "두레이 프로젝트 업무의 댓글 목록을 조회합니다. 페이징과 정렬 옵션을 지원합니다.",
             inputSchema =
-                    Tool.Input(
+                    ToolSchema(
                             properties =
                                     buildJsonObject {
                                         putJsonObject("project_id") {
@@ -64,14 +66,14 @@ fun getPostCommentsTool(): Tool {
 
 fun getPostCommentsHandler(
         doorayClient: DoorayClient
-): suspend (CallToolRequest) -> CallToolResult {
-    return handler@{ request ->
+): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
+    return handler@{ _, request ->
         try {
-            val projectId = request.arguments["project_id"]?.jsonPrimitive?.content
-            val postId = request.arguments["post_id"]?.jsonPrimitive?.content
-            val page = request.arguments["page"]?.jsonPrimitive?.content?.toIntOrNull()
-            val size = request.arguments["size"]?.jsonPrimitive?.content?.toIntOrNull()
-            val order = request.arguments["order"]?.jsonPrimitive?.content
+            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val postId = request.arguments?.get("post_id")?.jsonPrimitive?.content
+            val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull()
+            val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull()
+            val order = request.arguments?.get("order")?.jsonPrimitive?.content
 
             if (projectId.isNullOrBlank()) {
                 val errorResponse =

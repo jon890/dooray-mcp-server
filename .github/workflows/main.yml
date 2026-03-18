@@ -24,12 +24,12 @@ jobs:
           distribution: "temurin"
 
       - name: Cache Gradle packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
@@ -60,12 +60,12 @@ jobs:
           distribution: "temurin"
 
       - name: Cache Gradle packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
@@ -91,36 +91,12 @@ jobs:
     permissions:
       contents: read
       packages: write
-      # ID token 생성을 위한 권한 추가
       id-token: write
-      # attestation을 위한 추가 권한
       attestations: write
     timeout-minutes: 45
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: "21"
-          distribution: "temurin"
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build application jar
-        run: ./gradlew clean shadowJar --info --stacktrace
 
       - name: Extract version from gradle.properties
         id: version
@@ -152,7 +128,7 @@ jobs:
 
       - name: Build and push Docker image (Multi-platform)
         id: push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -165,7 +141,7 @@ jobs:
             VERSION=${{ steps.version.outputs.VERSION }}
 
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
@@ -179,13 +155,13 @@ jobs:
     steps:
       - name: Main Pipeline Summary
         run: |
-          echo "🎯 Main 브랜치 파이프라인 완료!"
-          echo "✅ 빌드: ${{ needs.build.result }}"
-          echo "✅ 테스트: ${{ needs.test.result }}"
-          echo "🐳 Docker 빌드 및 푸시: ${{ needs.docker-build-and-push.result }}"
+          echo "Main 브랜치 파이프라인 완료!"
+          echo "빌드: ${{ needs.build.result }}"
+          echo "테스트: ${{ needs.test.result }}"
+          echo "Docker 빌드 및 푸시: ${{ needs.docker-build-and-push.result }}"
           if [[ "${{ needs.build.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.docker-build-and-push.result }}" == "success" ]]; then
-            echo "🚀 Main 브랜치 배포가 성공적으로 완료되었습니다!"
+            echo "Main 브랜치 배포가 성공적으로 완료되었습니다!"
           else
-            echo "❌ Main 브랜치 파이프라인 실패"
+            echo "Main 브랜치 파이프라인 실패"
             exit 1
           fi
