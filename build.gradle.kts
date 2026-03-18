@@ -31,12 +31,11 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
-
-    // GitHub Actions 환경에서는 통합 테스트 제외
-    if (System.getenv("CI") == "true") {
-        exclude("**/*IntegrationTest*")
-        println("CI 환경에서는 통합 테스트를 제외합니다.")
+    useJUnitPlatform {
+        // CI 환경에서는 @Tag("integration") 테스트 제외
+        if (System.getenv("CI") == "true") {
+            excludeTags("integration")
+        }
     }
 }
 
