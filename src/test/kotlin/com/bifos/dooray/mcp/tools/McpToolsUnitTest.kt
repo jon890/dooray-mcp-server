@@ -1,6 +1,7 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
+import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.*
 import io.mockk.coEvery
 import io.mockk.every
@@ -215,7 +216,8 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getProjectsHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+        val handler = getProjectsHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -236,7 +238,8 @@ class McpToolsUnitTest {
         every { mockRequest.arguments } returns buildJsonObject {} // project_id 누락
 
         // when
-        val handler = getProjectPostsHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+        val handler = getProjectPostsHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -352,7 +355,9 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = createProjectPostHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = createProjectPostHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -379,7 +384,8 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = createProjectPostHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+        val handler = createProjectPostHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -472,7 +478,9 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getPostCommentsHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = getPostCommentsHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -501,7 +509,8 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getPostCommentsHandler(mockDoorayClient)
+        val mockProjectResolver1 = mockk<ProjectResolver>(relaxed = true)
+        val handler = getPostCommentsHandler(mockDoorayClient, mockProjectResolver1)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -526,7 +535,8 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getPostCommentsHandler(mockDoorayClient)
+        val mockProjectResolver2 = mockk<ProjectResolver>(relaxed = true)
+        val handler = getPostCommentsHandler(mockDoorayClient, mockProjectResolver2)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -566,7 +576,9 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = getPostCommentsHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = getPostCommentsHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -606,7 +618,9 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = createPostCommentHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = createPostCommentHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -632,7 +646,8 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = createPostCommentHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+        val handler = createPostCommentHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -673,7 +688,9 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = updatePostCommentHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = updatePostCommentHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then
@@ -712,7 +729,9 @@ class McpToolsUnitTest {
                 }
 
         // when
-        val handler = deletePostCommentHandler(mockDoorayClient)
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+        val handler = deletePostCommentHandler(mockDoorayClient, mockProjectResolver)
         val result = handler(mockk<ClientConnection>(), mockRequest)
 
         // then

@@ -2,6 +2,7 @@ package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
+import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.*
 import com.bifos.dooray.mcp.utils.JsonUtils
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
@@ -25,7 +26,7 @@ fun createProjectPostTool(): Tool {
                     buildJsonObject {
                         putJsonObject("project_id") {
                             put("type", "string")
-                            put("description", "프로젝트 ID (필수)")
+                            put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
                         }
                         putJsonObject("subject") {
                             put("type", "string")
@@ -82,11 +83,12 @@ fun createProjectPostTool(): Tool {
 }
 
 fun createProjectPostHandler(
-    doorayClient: DoorayClient
+    doorayClient: DoorayClient,
+    projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
-    return { _, request ->
+    return handler@{ _, request ->
         try {
-            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val projectInput = request.arguments?.get("project_id")?.jsonPrimitive?.content
             val subject = request.arguments?.get("subject")?.jsonPrimitive?.content
             val body = request.arguments?.get("body")?.jsonPrimitive?.content
             val toMemberIds =
@@ -95,7 +97,7 @@ fun createProjectPostHandler(
                 }
 
             when {
-                projectId == null -> {
+                projectInput == null -> {
                     val errorResponse =
                         ToolException(
                             type = ToolException.PARAMETER_MISSING,
@@ -153,6 +155,12 @@ fun createProjectPostHandler(
                 }
 
                 else -> {
+                    val projectId = try {
+                        projectResolver.resolveProjectId(projectInput)
+                    } catch (e: ToolException) {
+                        return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(e.toErrorResponse()))))
+                    }
+
                     // 선택적 파라미터 처리
                     val ccMemberIds =
                         request.arguments?.get("cc_member_ids")?.let { element ->

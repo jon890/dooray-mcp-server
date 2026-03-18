@@ -2,6 +2,7 @@ package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
+import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.PostCommentsResponseData
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
@@ -28,7 +29,7 @@ fun getPostCommentsTool(): Tool {
                                             put("type", "string")
                                             put(
                                                     "description",
-                                                    "프로젝트 ID (dooray_project_list_projects로 조회 가능)"
+                                                    "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다."
                                             )
                                         }
                                         putJsonObject("post_id") {
@@ -65,17 +66,18 @@ fun getPostCommentsTool(): Tool {
 }
 
 fun getPostCommentsHandler(
-        doorayClient: DoorayClient
+        doorayClient: DoorayClient,
+        projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
     return handler@{ _, request ->
         try {
-            val projectId = request.arguments?.get("project_id")?.jsonPrimitive?.content
+            val projectInput = request.arguments?.get("project_id")?.jsonPrimitive?.content
             val postId = request.arguments?.get("post_id")?.jsonPrimitive?.content
             val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull()
             val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull()
             val order = request.arguments?.get("order")?.jsonPrimitive?.content
 
-            if (projectId.isNullOrBlank()) {
+            if (projectInput.isNullOrBlank()) {
                 val errorResponse =
                         ToolException(
                                         type = ToolException.PARAMETER_MISSING,
@@ -101,6 +103,12 @@ fun getPostCommentsHandler(
                 return@handler CallToolResult(
                         content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
                 )
+            }
+
+            val projectId = try {
+                projectResolver.resolveProjectId(projectInput)
+            } catch (e: ToolException) {
+                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(e.toErrorResponse()))))
             }
 
             val response = doorayClient.getPostComments(projectId, postId, page, size, order)

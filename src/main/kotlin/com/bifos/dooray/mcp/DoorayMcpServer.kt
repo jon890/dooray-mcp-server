@@ -4,6 +4,7 @@ import com.bifos.dooray.mcp.client.DoorayHttpClient
 import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_API_KEY
 import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_BASE_URL
 import com.bifos.dooray.mcp.constants.VersionConst
+import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.tools.*
 import io.ktor.utils.io.streams.*
 import io.modelcontextprotocol.kotlin.sdk.types.*
@@ -88,6 +89,8 @@ class DoorayMcpServer {
     fun registerTool(server: Server, doorayHttpClient: DoorayHttpClient) {
         log.info("Adding tools...")
 
+        val projectResolver = ProjectResolver(doorayHttpClient)
+
         var toolCount = 0
 
         fun addTool(tool: Tool, handler: suspend (ClientConnection, CallToolRequest) -> CallToolResult) {
@@ -113,42 +116,42 @@ class DoorayMcpServer {
         // ============ 프로젝트 업무 관련 도구들 ============
 
         // 6. 프로젝트 업무 목록 조회
-        addTool(getProjectPostsTool(), getProjectPostsHandler(doorayHttpClient))
+        addTool(getProjectPostsTool(), getProjectPostsHandler(doorayHttpClient, projectResolver))
 
         // 7. 프로젝트 업무 상세 조회
-        addTool(getProjectPostTool(), getProjectPostHandler(doorayHttpClient))
+        addTool(getProjectPostTool(), getProjectPostHandler(doorayHttpClient, projectResolver))
 
         // 8. 프로젝트 업무 생성
-        addTool(createProjectPostTool(), createProjectPostHandler(doorayHttpClient))
+        addTool(createProjectPostTool(), createProjectPostHandler(doorayHttpClient, projectResolver))
 
         // 9. 프로젝트 업무 상태 변경
         addTool(
             setProjectPostWorkflowTool(),
-            setProjectPostWorkflowHandler(doorayHttpClient)
+            setProjectPostWorkflowHandler(doorayHttpClient, projectResolver)
         )
 
         // 10. 프로젝트 업무 완료 처리
-        addTool(setProjectPostDoneTool(), setProjectPostDoneHandler(doorayHttpClient))
+        addTool(setProjectPostDoneTool(), setProjectPostDoneHandler(doorayHttpClient, projectResolver))
 
         // 11. 프로젝트 목록 조회
-        addTool(getProjectsTool(), getProjectsHandler(doorayHttpClient))
+        addTool(getProjectsTool(), getProjectsHandler(doorayHttpClient, projectResolver))
 
         // 12. 프로젝트 업무 수정
-        addTool(updateProjectPostTool(), updateProjectPostHandler(doorayHttpClient))
+        addTool(updateProjectPostTool(), updateProjectPostHandler(doorayHttpClient, projectResolver))
 
         // ============ 업무 댓글 관련 도구들 ============
 
         // 13. 업무 댓글 생성
-        addTool(createPostCommentTool(), createPostCommentHandler(doorayHttpClient))
+        addTool(createPostCommentTool(), createPostCommentHandler(doorayHttpClient, projectResolver))
 
         // 14. 업무 댓글 목록 조회
-        addTool(getPostCommentsTool(), getPostCommentsHandler(doorayHttpClient))
+        addTool(getPostCommentsTool(), getPostCommentsHandler(doorayHttpClient, projectResolver))
 
         // 15. 업무 댓글 수정
-        addTool(updatePostCommentTool(), updatePostCommentHandler(doorayHttpClient))
+        addTool(updatePostCommentTool(), updatePostCommentHandler(doorayHttpClient, projectResolver))
 
         // 16. 업무 댓글 삭제
-        addTool(deletePostCommentTool(), deletePostCommentHandler(doorayHttpClient))
+        addTool(deletePostCommentTool(), deletePostCommentHandler(doorayHttpClient, projectResolver))
 
         log.info("Successfully added $toolCount tools to MCP server")
     }
