@@ -8,11 +8,11 @@ import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.tools.*
 import com.bifos.dooray.mcp.utils.Env
 import io.ktor.utils.io.streams.*
-import io.modelcontextprotocol.kotlin.sdk.types.*
 import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import io.modelcontextprotocol.kotlin.sdk.types.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
@@ -26,14 +26,12 @@ class DoorayMcpServer {
     fun initServer() {
         log.info("Dooray MCP Server starting...")
 
-        val env = getEnv()
-
-        log.info("DOORAY_API_KEY, DOORAY_BASE_URL found, initializing HTTP client...")
         val doorayHttpClient =
             DoorayHttpClient(
-                baseUrl = env[DOORAY_BASE_URL]!!,
-                doorayApiKey = env[DOORAY_API_KEY]!!
+                baseUrl = Env.require(DOORAY_BASE_URL),
+                doorayApiKey = Env.require(DOORAY_API_KEY)
             )
+        log.info("DOORAY_API_KEY, DOORAY_BASE_URL found, initializing HTTP client...")
 
         val server =
             Server(
@@ -71,16 +69,6 @@ class DoorayMcpServer {
             }
             done.join()
         }
-    }
-
-    fun getEnv(): Map<String, String> {
-        val baseUrl = Env.require(DOORAY_BASE_URL)
-        val apiKey = Env.require(DOORAY_API_KEY)
-
-        return mapOf(
-            DOORAY_BASE_URL to baseUrl,
-            DOORAY_API_KEY to apiKey,
-        )
     }
 
     fun registerTool(server: Server, doorayHttpClient: DoorayHttpClient) {
