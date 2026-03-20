@@ -370,7 +370,7 @@ class McpToolsUnitTest {
     }
 
     @Test
-    @DisplayName("업무 생성 도구 - to_member_ids 누락 에러")
+    @DisplayName("업무 생성 도구 - to_member_ids, to_group_ids 모두 누락 에러")
     fun testCreateProjectPostHandlerMissingToMemberIds() = runTest {
         // given
         val mockDoorayClient = mockk<DoorayClient>()
@@ -381,7 +381,7 @@ class McpToolsUnitTest {
                     put("project_id", "project1")
                     put("subject", "새 업무")
                     put("body", "새 업무 내용")
-                    // to_member_ids 누락
+                    // to_member_ids, to_group_ids 모두 누락
                 }
 
         // when
@@ -394,7 +394,7 @@ class McpToolsUnitTest {
         val content = result.content.first() as TextContent
         val responseText = content.text
         assertContains(responseText, "\"isError\": true")
-        assertContains(responseText, "MISSING_TO_MEMBER_IDS")
+        assertContains(responseText, "MISSING_TO_USERS")
     }
 
     @Test

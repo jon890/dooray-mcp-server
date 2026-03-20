@@ -34,12 +34,22 @@ fun createProjectPostTool(): Tool {
                         putJsonObject("to_member_ids") {
                             put("type", "array")
                             putJsonObject("items") { put("type", "string") }
-                            put("description", "담당자 멤버 ID 목록 (필수)")
+                            put("description", "담당자 멤버 ID 목록 (to_member_ids 또는 to_group_ids 중 하나 이상 필수)")
+                        }
+                        putJsonObject("to_group_ids") {
+                            put("type", "array")
+                            putJsonObject("items") { put("type", "string") }
+                            put("description", "담당자 그룹 ID 목록 (projectMemberGroupId). dooray_project_list_members에서 그룹 ID 확인 가능 (선택사항)")
                         }
                         putJsonObject("cc_member_ids") {
                             put("type", "array")
                             putJsonObject("items") { put("type", "string") }
                             put("description", "참조자 멤버 ID 목록 (선택사항)")
+                        }
+                        putJsonObject("cc_group_ids") {
+                            put("type", "array")
+                            putJsonObject("items") { put("type", "string") }
+                            put("description", "참조자 그룹 ID 목록 (projectMemberGroupId). dooray_project_list_members에서 그룹 ID 확인 가능 (선택사항)")
                         }
                         putJsonObject("parent_post_id") {
                             put("type", "string")
@@ -83,24 +93,28 @@ fun createProjectPostHandler(
             val subject = request.requireParam("subject", "MISSING_SUBJECT", "subject 파라미터가 필요합니다. 업무 제목을 입력하세요.")
             val body = request.requireParam("body", "MISSING_BODY", "body 파라미터가 필요합니다. 업무 내용을 입력하세요.")
 
-            val toMemberIds = request.arguments?.get("to_member_ids")?.let { JsonUtils.parseStringArray(it.toString()) }
-            if (toMemberIds.isNullOrEmpty()) {
+            val toMemberIds = request.arguments?.get("to_member_ids")?.let { JsonUtils.parseStringArray(it.toString()) } ?: emptyList()
+            val toGroupIds = request.arguments?.get("to_group_ids")?.let { JsonUtils.parseStringArray(it.toString()) } ?: emptyList()
+            if (toMemberIds.isEmpty() && toGroupIds.isEmpty()) {
                 throw com.bifos.dooray.mcp.exception.ToolException(
                     type = com.bifos.dooray.mcp.exception.ToolException.PARAMETER_MISSING,
-                    message = "to_member_ids 파라미터가 필요합니다. 담당자 멤버 ID 목록을 입력하세요.",
-                    code = "MISSING_TO_MEMBER_IDS"
+                    message = "to_member_ids 또는 to_group_ids 중 하나 이상 필요합니다. 담당자 멤버 ID 또는 그룹 ID 목록을 입력하세요.",
+                    code = "MISSING_TO_USERS"
                 )
             }
 
             val ccMemberIds = request.arguments?.get("cc_member_ids")?.let { JsonUtils.parseStringArray(it.toString()) } ?: emptyList()
+            val ccGroupIds = request.arguments?.get("cc_group_ids")?.let { JsonUtils.parseStringArray(it.toString()) } ?: emptyList()
             val parentPostId = request.optionalParam("parent_post_id")
             val dueDate = request.optionalParam("due_date")
             val milestoneId = request.optionalParam("milestone_id")
             val tagIds = request.arguments?.get("tag_ids")?.let { JsonUtils.parseStringArray(it.toString()) } ?: emptyList()
             val priority = request.arguments?.get("priority")?.jsonPrimitive?.content ?: "none"
 
-            val toUsers = toMemberIds.map { CreatePostUser(type = "member", member = Member(organizationMemberId = it)) }
-            val ccUsers = ccMemberIds.map { CreatePostUser(type = "member", member = Member(organizationMemberId = it)) }
+            val toUsers = toMemberIds.map { CreatePostUser(type = "member", member = Member(organizationMemberId = it)) } +
+                    toGroupIds.map { CreatePostUser(type = "group", group = Group(projectMemberGroupId = it)) }
+            val ccUsers = ccMemberIds.map { CreatePostUser(type = "member", member = Member(organizationMemberId = it)) } +
+                    ccGroupIds.map { CreatePostUser(type = "group", group = Group(projectMemberGroupId = it)) }
 
             val createRequest = CreatePostRequest(
                 parentPostId = parentPostId,

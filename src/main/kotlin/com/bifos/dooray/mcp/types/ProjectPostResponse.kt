@@ -21,7 +21,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class EmailUser(val emailAddress: String, val name: String)
 
 /** 그룹 정보 */
-@Serializable data class Group(val projectMemberGroupId: String, val members: List<Member>)
+@Serializable data class Group(val projectMemberGroupId: String, val members: List<Member> = emptyList())
 
 /** 업무 관련 사용자 - 기본 타입 */
 @Serializable
@@ -119,9 +119,10 @@ data class CreatePostUsers(
 /** 업무 생성용 사용자 */
 @Serializable
 data class CreatePostUser(
-        val type: String, // "member", "emailUser"
+        val type: String, // "member", "emailUser", "group"
         val member: Member? = null,
-        val emailUser: EmailUser? = null
+        val emailUser: EmailUser? = null,
+        val group: Group? = null
 )
 
 /** 업무 수정 요청 */

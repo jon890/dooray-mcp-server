@@ -32,12 +32,22 @@ fun updateProjectPostTool(): Tool {
                         putJsonObject("to_member_ids") {
                             put("type", "array")
                             putJsonObject("items") { put("type", "string") }
-                            put("description", "담당자 멤버 ID 목록 (선택사항)")
+                            put("description", "담당자 멤버 ID 목록 (선택사항, 지정 시 기존 담당자 전체 교체)")
+                        }
+                        putJsonObject("to_group_ids") {
+                            put("type", "array")
+                            putJsonObject("items") { put("type", "string") }
+                            put("description", "담당자 그룹 ID 목록 (projectMemberGroupId, 선택사항, to_member_ids와 함께 사용 가능)")
                         }
                         putJsonObject("cc_member_ids") {
                             put("type", "array")
                             putJsonObject("items") { put("type", "string") }
-                            put("description", "참조자 멤버 ID 목록 (선택사항)")
+                            put("description", "참조자 멤버 ID 목록 (선택사항, 지정 시 기존 참조자 전체 교체)")
+                        }
+                        putJsonObject("cc_group_ids") {
+                            put("type", "array")
+                            putJsonObject("items") { put("type", "string") }
+                            put("description", "참조자 그룹 ID 목록 (projectMemberGroupId, 선택사항, cc_member_ids와 함께 사용 가능)")
                         }
                         putJsonObject("priority") {
                             put("type", "string")
@@ -97,26 +107,41 @@ fun updateProjectPostHandler(
             val dueDate = request.optionalParam("due_date") ?: existingPost.dueDate
 
             val toMemberIds = request.arguments?.get("to_member_ids")?.jsonArray?.mapNotNull { it.jsonPrimitive.content }
+            val toGroupIds = request.arguments?.get("to_group_ids")?.jsonArray?.mapNotNull { it.jsonPrimitive.content }
             val ccMemberIds = request.arguments?.get("cc_member_ids")?.jsonArray?.mapNotNull { it.jsonPrimitive.content }
+            val ccGroupIds = request.arguments?.get("cc_group_ids")?.jsonArray?.mapNotNull { it.jsonPrimitive.content }
             val tagIds = request.arguments?.get("tag_ids")?.jsonArray?.mapNotNull { it.jsonPrimitive.content }
                 ?: existingPost.tags.map { it.id }
 
-            val users = CreatePostUsers(
-                to = if (toMemberIds != null) {
-                    toMemberIds.map { CreatePostUser(type = "member", member = Member(it)) }
-                } else {
-                    existingPost.users.to.mapNotNull { postUser ->
-                        postUser.member?.let { CreatePostUser(type = "member", member = Member(it.organizationMemberId)) }
-                    }
-                },
-                cc = if (ccMemberIds != null) {
-                    ccMemberIds.map { CreatePostUser(type = "member", member = Member(it)) }
-                } else {
-                    existingPost.users.cc.mapNotNull { postUser ->
-                        postUser.member?.let { CreatePostUser(type = "member", member = Member(it.organizationMemberId)) }
+            // to/cc 중 어느 하나라도 지정되면 해당 to/cc 전체를 교체 (멤버 + 그룹 조합)
+            // 미지정 시 기존 업무의 멤버와 그룹을 모두 유지
+            val toUsers = if (toMemberIds != null || toGroupIds != null) {
+                (toMemberIds ?: emptyList()).map { CreatePostUser(type = "member", member = Member(it)) } +
+                        (toGroupIds ?: emptyList()).map { CreatePostUser(type = "group", group = Group(projectMemberGroupId = it)) }
+            } else {
+                existingPost.users.to.mapNotNull { postUser ->
+                    when (postUser.type) {
+                        "member" -> postUser.member?.let { CreatePostUser(type = "member", member = Member(it.organizationMemberId)) }
+                        "group" -> postUser.group?.let { CreatePostUser(type = "group", group = Group(projectMemberGroupId = it.projectMemberGroupId)) }
+                        else -> null
                     }
                 }
-            )
+            }
+
+            val ccUsers = if (ccMemberIds != null || ccGroupIds != null) {
+                (ccMemberIds ?: emptyList()).map { CreatePostUser(type = "member", member = Member(it)) } +
+                        (ccGroupIds ?: emptyList()).map { CreatePostUser(type = "group", group = Group(projectMemberGroupId = it)) }
+            } else {
+                existingPost.users.cc.mapNotNull { postUser ->
+                    when (postUser.type) {
+                        "member" -> postUser.member?.let { CreatePostUser(type = "member", member = Member(it.organizationMemberId)) }
+                        "group" -> postUser.group?.let { CreatePostUser(type = "group", group = Group(projectMemberGroupId = it.projectMemberGroupId)) }
+                        else -> null
+                    }
+                }
+            }
+
+            val users = CreatePostUsers(to = toUsers, cc = ccUsers)
 
             val updateRequest = UpdatePostRequest(
                 users = users,
