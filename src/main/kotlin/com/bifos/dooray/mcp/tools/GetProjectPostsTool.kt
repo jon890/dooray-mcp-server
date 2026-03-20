@@ -9,7 +9,6 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
@@ -103,8 +102,8 @@ fun getProjectPostsHandler(
             val projectId = projectResolver.resolveProjectId(
                 request.requireParam("project_id", "MISSING_PROJECT_ID", "project_id 파라미터가 필요합니다. 프로젝트 ID를 입력하세요.")
             )
-            val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
-            val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull() ?: 20
+            val page = request.intParam("page", 0)
+            val size = request.intParam("size", 20)
 
             val toMemberIds = request.arguments?.get("to_member_ids")?.let { JsonUtils.parseStringArray(it.toString()) }
             val ccMemberIds = request.arguments?.get("cc_member_ids")?.let { JsonUtils.parseStringArray(it.toString()) }

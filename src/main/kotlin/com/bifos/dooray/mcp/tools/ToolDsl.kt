@@ -59,6 +59,12 @@ fun CallToolRequest.requireParam(name: String, errorCode: String, errorMessage: 
 fun CallToolRequest.optionalParam(name: String): String? =
     arguments?.get(name)?.jsonPrimitive?.content
 
+fun CallToolRequest.intParam(name: String, default: Int): Int =
+    arguments?.get(name)?.jsonPrimitive?.content?.toIntOrNull() ?: default
+
+fun CallToolRequest.intParamOrNull(name: String): Int? =
+    arguments?.get(name)?.jsonPrimitive?.content?.toIntOrNull()
+
 // ── 공통 스키마 프로퍼티 빌더 ──────────────────────────────────────────────────
 
 fun JsonObjectBuilder.projectIdProperty() {
