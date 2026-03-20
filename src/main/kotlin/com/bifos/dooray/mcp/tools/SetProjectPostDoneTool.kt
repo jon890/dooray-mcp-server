@@ -1,18 +1,13 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
-import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.service.ProjectResolver
-import com.bifos.dooray.mcp.types.ToolSuccessResponse
-import com.bifos.dooray.mcp.utils.JsonUtils
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
-import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
@@ -31,10 +26,7 @@ fun setProjectPostDoneTool(): Tool {
                         }
                         putJsonObject("post_id") {
                             put("type", "string")
-                            put(
-                                "description",
-                                "업무 ID (dooray_project_list_posts로 조회 가능) (필수)"
-                            )
+                            put("description", "업무 ID (dooray_project_list_posts로 조회 가능) (필수)")
                         }
                     },
                 required = listOf("project_id", "post_id")
@@ -48,91 +40,30 @@ fun setProjectPostDoneHandler(
     doorayClient: DoorayClient,
     projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
-    return handler@{ _, request ->
-        try {
-            val projectInput = request.arguments?.get("project_id")?.jsonPrimitive?.content
-            val postId = request.arguments?.get("post_id")?.jsonPrimitive?.content
+    return { _, request ->
+        toolHandler {
+            val projectId = projectResolver.resolveProjectId(
+                request.requireParam("project_id", "MISSING_PROJECT_ID", "project_id 파라미터가 필요합니다. 프로젝트 ID를 입력하세요.")
+            )
+            val postId = request.requireParam(
+                "post_id", "MISSING_POST_ID",
+                "post_id 파라미터가 필요합니다. dooray_project_list_posts를 사용해서 업무 ID를 먼저 조회하세요."
+            )
 
-            when {
-                projectInput == null -> {
-                    val errorResponse =
-                        ToolException(
-                            type = ToolException.PARAMETER_MISSING,
-                            message = "project_id 파라미터가 필요합니다. 프로젝트 ID를 입력하세요.",
-                            code = "MISSING_PROJECT_ID"
-                        )
-                            .toErrorResponse()
+            val response = doorayClient.setPostDone(projectId, postId)
 
-                    CallToolResult(
-                        content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                    )
-                }
-
-                postId == null -> {
-                    val errorResponse =
-                        ToolException(
-                            type = ToolException.PARAMETER_MISSING,
-                            message =
-                                "post_id 파라미터가 필요합니다. dooray_project_list_posts를 사용해서 업무 ID를 먼저 조회하세요.",
-                            code = "MISSING_POST_ID"
-                        )
-                            .toErrorResponse()
-
-                    CallToolResult(
-                        content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                    )
-                }
-
-                else -> {
-                    val projectId = try {
-                        projectResolver.resolveProjectId(projectInput)
-                    } catch (e: ToolException) {
-                        return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(e.toErrorResponse()))))
-                    }
-
-                    val response = doorayClient.setPostDone(projectId, postId)
-
-                    if (response.header.isSuccessful) {
-                        val nextStepHint =
-                            "\n\n💡 다음 가능한 작업:\n" +
-                                    "- dooray_project_get_post: 완료된 업무 상태 확인\n" +
-                                    "- dooray_project_list_posts: 프로젝트 업무 목록 조회"
-
-                        val successResponse =
-                            ToolSuccessResponse(
-                                data = mapOf("message" to "업무가 성공적으로 완료 처리되었습니다."),
-                                message = "✅ 업무를 성공적으로 완료 처리했습니다$nextStepHint"
-                            )
-
-                        CallToolResult(
-                            content =
-                                listOf(TextContent(JsonUtils.toJsonString(successResponse)))
-                        )
-                    } else {
-                        val errorResponse =
-                            ToolException(
-                                type = ToolException.API_ERROR,
-                                message = response.header.resultMessage,
-                                code = "DOORAY_API_${response.header.resultCode}"
-                            )
-                                .toErrorResponse()
-
-                        CallToolResult(
-                            content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                        )
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            val errorResponse =
-                ToolException(
-                    type = ToolException.INTERNAL_ERROR,
-                    message = "내부 오류가 발생했습니다: ${e.message}",
-                    details = e.stackTraceToString()
+            if (response.header.isSuccessful) {
+                val nextStepHint =
+                    "\n\n💡 다음 가능한 작업:\n" +
+                            "- dooray_project_get_post: 완료된 업무 상태 확인\n" +
+                            "- dooray_project_list_posts: 프로젝트 업무 목록 조회"
+                successResult(
+                    data = mapOf("message" to "업무가 성공적으로 완료 처리되었습니다."),
+                    message = "✅ 업무를 성공적으로 완료 처리했습니다$nextStepHint"
                 )
-                    .toErrorResponse()
-
-            CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
+            } else {
+                apiErrorResult(response.header)
+            }
         }
     }
 }

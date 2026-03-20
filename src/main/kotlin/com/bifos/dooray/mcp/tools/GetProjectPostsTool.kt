@@ -1,16 +1,13 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
-import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.service.ProjectResolver
-import com.bifos.dooray.mcp.types.ToolSuccessResponse
 import com.bifos.dooray.mcp.utils.JsonUtils
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
-import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -55,18 +52,12 @@ fun getProjectPostsTool(): Tool {
                         }
                         putJsonObject("parent_post_id") {
                             put("type", "string")
-                            put(
-                                "description",
-                                "상위 업무 ID - 특정 업무의 하위 업무들만 조회 (선택사항)"
-                            )
+                            put("description", "상위 업무 ID - 특정 업무의 하위 업무들만 조회 (선택사항)")
                         }
                         putJsonObject("post_workflow_classes") {
                             put("type", "array")
                             putJsonObject("items") { put("type", "string") }
-                            put(
-                                "description",
-                                "워크플로우 클래스 (backlog, registered, working, closed) (선택사항)"
-                            )
+                            put("description", "워크플로우 클래스 (backlog, registered, working, closed) (선택사항)")
                         }
                         putJsonObject("milestone_ids") {
                             put("type", "array")
@@ -79,10 +70,7 @@ fun getProjectPostsTool(): Tool {
                         }
                         putJsonObject("order") {
                             put("type", "string")
-                            put(
-                                "description",
-                                "정렬 조건 (postDueAt, postUpdatedAt, createdAt, 역순은 앞에 '-' 추가) (선택사항)"
-                            )
+                            put("description", "정렬 조건 (postDueAt, postUpdatedAt, createdAt, 역순은 앞에 '-' 추가) (선택사항)")
                         }
                         putJsonObject("from_member_ids") {
                             put("type", "array")
@@ -122,95 +110,52 @@ fun getProjectPostsHandler(
     doorayClient: DoorayClient,
     projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
-    return handler@{ _, request ->
-        try {
-            val projectInput = request.arguments?.get("project_id")?.jsonPrimitive?.content
-
-            if (projectInput == null) {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.PARAMETER_MISSING,
-                        message = "project_id 파라미터가 필요합니다. 프로젝트 ID를 입력하세요.",
-                        code = "MISSING_PROJECT_ID"
-                    )
-                        .toErrorResponse()
-
-                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
-            }
-
-            val projectId = try {
-                projectResolver.resolveProjectId(projectInput)
-            } catch (e: ToolException) {
-                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(e.toErrorResponse()))))
-            }
-
+    return { _, request ->
+        toolHandler {
+            val projectId = projectResolver.resolveProjectId(
+                request.requireParam("project_id", "MISSING_PROJECT_ID", "project_id 파라미터가 필요합니다. 프로젝트 ID를 입력하세요.")
+            )
             val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
             val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull() ?: 20
 
-            // 배열 파라미터 처리
-            val toMemberIds =
-                request.arguments?.get("to_member_ids")?.let { element ->
-                    JsonUtils.parseStringArray(element.toString())
-                }
-            val ccMemberIds =
-                request.arguments?.get("cc_member_ids")?.let { element ->
-                    JsonUtils.parseStringArray(element.toString())
-                }
-            val tagIds =
-                request.arguments?.get("tag_ids")?.let { element ->
-                    JsonUtils.parseStringArray(element.toString())
-                }
-            val postWorkflowClasses =
-                request.arguments?.get("post_workflow_classes")?.let { element ->
-                    JsonUtils.parseStringArray(element.toString())
-                }
-            val milestoneIds =
-                request.arguments?.get("milestone_ids")?.let { element ->
-                    JsonUtils.parseStringArray(element.toString())
-                }
+            val toMemberIds = request.arguments?.get("to_member_ids")?.let { JsonUtils.parseStringArray(it.toString()) }
+            val ccMemberIds = request.arguments?.get("cc_member_ids")?.let { JsonUtils.parseStringArray(it.toString()) }
+            val tagIds = request.arguments?.get("tag_ids")?.let { JsonUtils.parseStringArray(it.toString()) }
+            val postWorkflowClasses = request.arguments?.get("post_workflow_classes")?.let { JsonUtils.parseStringArray(it.toString()) }
+            val milestoneIds = request.arguments?.get("milestone_ids")?.let { JsonUtils.parseStringArray(it.toString()) }
+            val fromMemberIds = request.arguments?.get("from_member_ids")?.let { JsonUtils.parseStringArray(it.toString()) }
+            val postWorkflowIds = request.arguments?.get("post_workflow_ids")?.let { JsonUtils.parseStringArray(it.toString()) }
 
-            // 단일 값 파라미터 처리
-            val parentPostId = request.arguments?.get("parent_post_id")?.jsonPrimitive?.content
-            val subjects = request.arguments?.get("subjects")?.jsonPrimitive?.content
-            val order = request.arguments?.get("order")?.jsonPrimitive?.content
-            val postNumber = request.arguments?.get("post_number")?.jsonPrimitive?.content
-            val createdAt = request.arguments?.get("created_at")?.jsonPrimitive?.content
-            val updatedAt = request.arguments?.get("updated_at")?.jsonPrimitive?.content
-            val dueAt = request.arguments?.get("due_at")?.jsonPrimitive?.content
+            val parentPostId = request.optionalParam("parent_post_id")
+            val subjects = request.optionalParam("subjects")
+            val order = request.optionalParam("order")
+            val postNumber = request.optionalParam("post_number")
+            val createdAt = request.optionalParam("created_at")
+            val updatedAt = request.optionalParam("updated_at")
+            val dueAt = request.optionalParam("due_at")
 
-            val fromMemberIds =
-                request.arguments?.get("from_member_ids")?.let { element ->
-                    JsonUtils.parseStringArray(element.toString())
-                }
-            val postWorkflowIds =
-                request.arguments?.get("post_workflow_ids")?.let { element ->
-                    JsonUtils.parseStringArray(element.toString())
-                }
-
-            val response =
-                doorayClient.getPosts(
-                    projectId = projectId,
-                    page = page,
-                    size = size,
-                    fromMemberIds = fromMemberIds,
-                    toMemberIds = toMemberIds,
-                    ccMemberIds = ccMemberIds,
-                    tagIds = tagIds,
-                    parentPostId = parentPostId,
-                    postNumber = postNumber,
-                    postWorkflowClasses = postWorkflowClasses,
-                    postWorkflowIds = postWorkflowIds,
-                    milestoneIds = milestoneIds,
-                    subjects = subjects,
-                    createdAt = createdAt,
-                    updatedAt = updatedAt,
-                    dueAt = dueAt,
-                    order = order
-                )
+            val response = doorayClient.getPosts(
+                projectId = projectId,
+                page = page,
+                size = size,
+                fromMemberIds = fromMemberIds,
+                toMemberIds = toMemberIds,
+                ccMemberIds = ccMemberIds,
+                tagIds = tagIds,
+                parentPostId = parentPostId,
+                postNumber = postNumber,
+                postWorkflowClasses = postWorkflowClasses,
+                postWorkflowIds = postWorkflowIds,
+                milestoneIds = milestoneIds,
+                subjects = subjects,
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+                dueAt = dueAt,
+                order = order
+            )
 
             if (response.header.isSuccessful) {
                 val pageInfo = if (page == 0) "첫 번째 페이지" else "${page + 1}번째 페이지"
-
                 val nextStepHint =
                     if (response.result.isNotEmpty()) {
                         "\n\n💡 다음 단계: 특정 업무의 상세 정보를 보려면 dooray_project_get_post를 사용하세요."
@@ -218,40 +163,13 @@ fun getProjectPostsHandler(
                         if (page == 0) "\n\n📋 조회 결과가 없습니다. 필터 조건을 확인해주세요."
                         else "\n\n📄 더 이상 업무가 없습니다."
                     }
-
-                val successResponse =
-                    ToolSuccessResponse(
-                        data = response.result,
-                        message =
-                            "📋 프로젝트 업무 목록을 성공적으로 조회했습니다 ($pageInfo, 총 ${response.result.size}개)$nextStepHint"
-                    )
-
-                CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(successResponse)))
+                successResult(
+                    data = response.result,
+                    message = "📋 프로젝트 업무 목록을 성공적으로 조회했습니다 ($pageInfo, 총 ${response.result.size}개)$nextStepHint"
                 )
             } else {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.API_ERROR,
-                        message = response.header.resultMessage,
-                        code = "DOORAY_API_${response.header.resultCode}"
-                    )
-                        .toErrorResponse()
-
-                CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                )
+                apiErrorResult(response.header)
             }
-        } catch (e: Exception) {
-            val errorResponse =
-                ToolException(
-                    type = ToolException.INTERNAL_ERROR,
-                    message = "내부 오류가 발생했습니다: ${e.message}",
-                    details = e.stackTraceToString()
-                )
-                    .toErrorResponse()
-
-            CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
         }
     }
 }
