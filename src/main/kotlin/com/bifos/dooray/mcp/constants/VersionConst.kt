@@ -3,11 +3,12 @@ package com.bifos.dooray.mcp.constants
 /** 프로젝트 버전 상수 */
 object VersionConst {
     /** 현재 프로젝트 버전 (gradle.properties의 project.version과 동일하게 유지) */
-    const val VERSION = "0.4.0"
+    const val VERSION = "0.4.1"
 
     /** 버전 히스토리 및 변경사항 */
     const val CHANGELOG =
             """
+        0.4.1 - 업무 생성/수정 시 그룹을 담당자/참조자로 설정 지원 (to_group_ids, cc_group_ids)
         0.4.0 - ToolDsl 공통 인프라 추출(Phase 1-3), dooray_project_set_post_parent 툴 추가, Docker 빌드 태그 기반 실행으로 변경
         0.3.1 - 프로젝트 코드/ID 캐시(ProjectResolver), 환경변수 유틸리티(Env), 통합 테스트 태그 분리
         0.3.0 - MCP SDK 0.9.0 업그레이드, Kotlin 2.3.0, Ktor 3.4.1, Gradle Version Catalog 도입
