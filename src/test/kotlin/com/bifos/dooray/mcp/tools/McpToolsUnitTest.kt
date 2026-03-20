@@ -1047,4 +1047,94 @@ class McpToolsUnitTest {
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 삭제")
     }
+
+    // === 상위 업무 설정 도구 테스트 ===
+
+    @Test
+    @DisplayName("상위 업무 설정 도구 - 성공 케이스")
+    fun testSetProjectPostParentHandlerSuccess() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockResponse = DoorayApiUnitResponse(
+            header = DoorayApiHeader(isSuccessful = true, resultCode = 0, resultMessage = "success"),
+            result = null
+        )
+        coEvery { mockDoorayClient.setPostParent("project1", "post1", "parent1") } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject {
+            put("project_id", "project1")
+            put("post_id", "post1")
+            put("parent_post_id", "parent1")
+        }
+
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+
+        // when
+        val handler = setProjectPostParentHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"success\": true")
+        assertContains(responseText, "post1")
+        assertContains(responseText, "parent1")
+    }
+
+    @Test
+    @DisplayName("상위 업무 설정 도구 - parent_post_id 누락 에러")
+    fun testSetProjectPostParentHandlerMissingParentPostId() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject {
+            put("project_id", "project1")
+            put("post_id", "post1")
+        }
+
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+
+        // when
+        val handler = setProjectPostParentHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "MISSING_PARENT_POST_ID")
+    }
+
+    @Test
+    @DisplayName("상위 업무 설정 도구 - API 에러 케이스")
+    fun testSetProjectPostParentHandlerApiError() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockResponse = DoorayApiUnitResponse(
+            header = DoorayApiHeader(isSuccessful = false, resultCode = 404, resultMessage = "Post not found"),
+            result = null
+        )
+        coEvery { mockDoorayClient.setPostParent(any(), any(), any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject {
+            put("project_id", "project1")
+            put("post_id", "unknown")
+            put("parent_post_id", "parent1")
+        }
+
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+
+        // when
+        val handler = setProjectPostParentHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "DOORAY_API_404")
+        assertContains(responseText, "Post not found")
+    }
 }
