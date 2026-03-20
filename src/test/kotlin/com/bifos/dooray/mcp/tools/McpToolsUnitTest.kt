@@ -922,6 +922,91 @@ class McpToolsUnitTest {
         }
     }
 
+    // === 프로젝트 워크플로우 조회 도구 테스트 ===
+
+    @Test
+    @DisplayName("프로젝트 워크플로우 목록 조회 도구 - 성공 케이스")
+    fun testGetProjectWorkflowsHandlerSuccess() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockWorkflows = listOf(
+            ProjectWorkflow(id = "wf1", name = "등록됨", `class` = "registered", order = 1),
+            ProjectWorkflow(id = "wf2", name = "진행 중", `class` = "working", order = 2),
+            ProjectWorkflow(id = "wf3", name = "완료", `class` = "closed", order = 3)
+        )
+        val mockResponse = ProjectWorkflowListResponse(
+            header = DoorayApiHeader(isSuccessful = true, resultCode = 0, resultMessage = "success"),
+            result = mockWorkflows
+        )
+        coEvery { mockDoorayClient.getProjectWorkflows(any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject { put("project_id", "project1") }
+
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+
+        // when
+        val handler = getProjectWorkflowsHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"success\": true")
+        assertContains(responseText, "wf1")
+        assertContains(responseText, "진행 중")
+        assertContains(responseText, "총 3개")
+    }
+
+    @Test
+    @DisplayName("프로젝트 워크플로우 목록 조회 도구 - project_id 누락 에러")
+    fun testGetProjectWorkflowsHandlerMissingProjectId() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject {}
+
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+
+        // when
+        val handler = getProjectWorkflowsHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "MISSING_PROJECT_ID")
+    }
+
+    @Test
+    @DisplayName("프로젝트 워크플로우 목록 조회 도구 - API 에러 케이스")
+    fun testGetProjectWorkflowsHandlerApiError() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockResponse = ProjectWorkflowListResponse(
+            header = DoorayApiHeader(isSuccessful = false, resultCode = 404, resultMessage = "Project not found"),
+            result = emptyList()
+        )
+        coEvery { mockDoorayClient.getProjectWorkflows(any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject { put("project_id", "unknown") }
+
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("unknown") } returns "unknown"
+
+        // when
+        val handler = getProjectWorkflowsHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "DOORAY_API_404")
+        assertContains(responseText, "Project not found")
+    }
+
     @Test
     @DisplayName("업무 댓글 삭제 도구 - 성공 케이스")
     fun testDeletePostCommentHandlerSuccess() = runTest {
