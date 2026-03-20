@@ -7,13 +7,11 @@ import com.bifos.dooray.mcp.utils.JsonUtils
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 
-/**
- * 공통 tool handler 래퍼.
- * - ToolException → 적절한 에러 응답으로 변환
- * - Exception → INTERNAL_ERROR 응답으로 변환
- */
 suspend fun toolHandler(block: suspend () -> CallToolResult): CallToolResult {
     return try {
         block()
@@ -28,11 +26,9 @@ suspend fun toolHandler(block: suspend () -> CallToolResult): CallToolResult {
     }
 }
 
-/** ToolException을 CallToolResult로 변환 */
 fun ToolException.toCallToolResult(): CallToolResult =
     CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(toErrorResponse()))))
 
-/** 성공 응답 CallToolResult 생성 (데이터 있음) */
 inline fun <reified T : Any> successResult(data: T, message: String): CallToolResult =
     CallToolResult(
         content = listOf(TextContent(JsonUtils.toJsonString(
@@ -40,13 +36,11 @@ inline fun <reified T : Any> successResult(data: T, message: String): CallToolRe
         )))
     )
 
-/** 성공 응답 CallToolResult 생성 (데이터 없음) */
 fun successResult(message: String): CallToolResult =
     CallToolResult(
         content = listOf(TextContent(JsonUtils.toJsonString(ToolSuccessResponse(message = message))))
     )
 
-/** API 에러 응답 CallToolResult 생성 */
 fun apiErrorResult(header: DoorayApiHeader): CallToolResult =
     ToolException(
         type = ToolException.API_ERROR,
@@ -54,10 +48,6 @@ fun apiErrorResult(header: DoorayApiHeader): CallToolResult =
         code = "DOORAY_API_${header.resultCode}"
     ).toCallToolResult()
 
-/**
- * 필수 String 파라미터를 추출합니다.
- * 값이 없으면 ToolException(PARAMETER_MISSING)을 던집니다.
- */
 fun CallToolRequest.requireParam(name: String, errorCode: String, errorMessage: String): String =
     arguments?.get(name)?.jsonPrimitive?.content
         ?: throw ToolException(
@@ -66,8 +56,38 @@ fun CallToolRequest.requireParam(name: String, errorCode: String, errorMessage: 
             code = errorCode
         )
 
-/**
- * 선택적 String 파라미터를 추출합니다.
- */
 fun CallToolRequest.optionalParam(name: String): String? =
     arguments?.get(name)?.jsonPrimitive?.content
+
+// ── 공통 스키마 프로퍼티 빌더 ──────────────────────────────────────────────────
+
+fun JsonObjectBuilder.projectIdProperty() {
+    putJsonObject("project_id") {
+        put("type", "string")
+        put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
+    }
+}
+
+fun JsonObjectBuilder.postIdProperty(
+    description: String = "업무 ID (dooray_project_list_posts로 조회 가능)"
+) {
+    putJsonObject("post_id") {
+        put("type", "string")
+        put("description", description)
+    }
+}
+
+fun JsonObjectBuilder.paginationProperties(defaultSize: Int = 20, maxSize: Int? = null) {
+    putJsonObject("page") {
+        put("type", "integer")
+        put("description", "페이지 번호 (기본값: 0)")
+        put("default", 0)
+    }
+    putJsonObject("size") {
+        put("type", "integer")
+        val desc = if (maxSize != null) "페이지 크기 (기본값: $defaultSize, 최대: $maxSize)"
+                   else "페이지 크기 (기본값: $defaultSize)"
+        put("description", desc)
+        put("default", defaultSize)
+    }
+}

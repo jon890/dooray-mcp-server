@@ -89,6 +89,7 @@ jobs:
     name: Docker Build and Push
     runs-on: ubuntu-latest
     needs: [build, test]
+    if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: read
       packages: write
@@ -156,13 +157,19 @@ jobs:
     steps:
       - name: Main Pipeline Summary
         run: |
-          echo "Main 브랜치 파이프라인 완료!"
+          echo "파이프라인 완료!"
           echo "빌드: ${{ needs.build.result }}"
           echo "테스트: ${{ needs.test.result }}"
           echo "Docker 빌드 및 푸시: ${{ needs.docker-build-and-push.result }}"
-          if [[ "${{ needs.build.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.docker-build-and-push.result }}" == "success" ]]; then
-            echo "Main 브랜치 배포가 성공적으로 완료되었습니다!"
+          DOCKER="${{ needs.docker-build-and-push.result }}"
+          if [[ "${{ needs.build.result }}" == "success" && "${{ needs.test.result }}" == "success" ]]; then
+            if [[ "$DOCKER" == "success" || "$DOCKER" == "skipped" ]]; then
+              echo "파이프라인이 성공적으로 완료되었습니다!"
+            else
+              echo "Docker 빌드 실패"
+              exit 1
+            fi
           else
-            echo "Main 브랜치 파이프라인 실패"
+            echo "빌드 또는 테스트 실패"
             exit 1
           fi

@@ -20,20 +20,8 @@ fun getProjectMembersTool(): Tool {
                 "입력할 organizationMemberId를 찾을 때 사용하세요.",
         inputSchema = ToolSchema(
             properties = buildJsonObject {
-                putJsonObject("project_id") {
-                    put("type", "string")
-                    put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
-                }
-                putJsonObject("page") {
-                    put("type", "integer")
-                    put("description", "페이지 번호 (기본값: 0)")
-                    put("default", 0)
-                }
-                putJsonObject("size") {
-                    put("type", "integer")
-                    put("description", "페이지 크기 (기본값: 100, 최대: 100)")
-                    put("default", 100)
-                }
+                projectIdProperty()
+                paginationProperties(defaultSize = 100, maxSize = 100)
             },
             required = listOf("project_id")
         ),

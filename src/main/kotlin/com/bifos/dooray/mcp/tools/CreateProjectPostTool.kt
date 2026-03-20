@@ -22,10 +22,7 @@ fun createProjectPostTool(): Tool {
             ToolSchema(
                 properties =
                     buildJsonObject {
-                        putJsonObject("project_id") {
-                            put("type", "string")
-                            put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
-                        }
+                        projectIdProperty()
                         putJsonObject("subject") {
                             put("type", "string")
                             put("description", "업무 제목 (필수)")

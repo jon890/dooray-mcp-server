@@ -19,14 +19,8 @@ fun updateProjectPostTool(): Tool {
             ToolSchema(
                 properties =
                     buildJsonObject {
-                        putJsonObject("project_id") {
-                            put("type", "string")
-                            put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
-                        }
-                        putJsonObject("post_id") {
-                            put("type", "string")
-                            put("description", "수정할 업무 ID (dooray_project_list_posts로 조회 가능)")
-                        }
+                        projectIdProperty()
+                        postIdProperty("수정할 업무 ID (dooray_project_list_posts로 조회 가능)")
                         putJsonObject("subject") {
                             put("type", "string")
                             put("description", "업무 제목 (선택사항)")
