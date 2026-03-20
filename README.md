@@ -56,7 +56,7 @@ export DOORAY_PROJECT_CACHE_TTL_MINUTES=5
 ./gradlew runLocal
 
 # 또는 직접 실행
-java -jar build/libs/dooray-mcp-server-0.3.0-all.jar
+java -jar build/libs/dooray-mcp-server-0.4.0-all.jar
 ```
 
 ### Docker 실행
@@ -71,7 +71,7 @@ docker run -e DOORAY_API_KEY="your_api_key" \
            bifos/dooray-mcp:latest
 ```
 
-## 사용 가능한 도구 (총 16개)
+## 사용 가능한 도구 (총 19개)
 
 ### 위키 관련 도구 (5개)
 
@@ -95,55 +95,67 @@ docker run -e DOORAY_API_KEY="your_api_key" \
 
 기존 위키 페이지를 수정합니다.
 
-### 프로젝트 관련 도구 (1개)
+### 프로젝트 관련 도구 (2개)
 
 #### 6. dooray_project_list_projects
 
 접근 가능한 프로젝트 목록을 조회합니다.
 
-### 업무 관련 도구 (6개)
+#### 7. dooray_project_list_members
+
+프로젝트 멤버 목록을 조회합니다. 업무 담당자/참조자 지정 시 사용합니다.
+
+### 업무 관련 도구 (8개)
 
 > 💡 `project_id` 파라미터에 프로젝트 ID 또는 **프로젝트 코드(이름)**를 입력할 수 있습니다. 서버가 내부적으로 자동으로 ID를 resolve합니다.
 
-#### 7. dooray_project_list_posts
+#### 8. dooray_project_list_posts
 
 프로젝트의 업무 목록을 조회합니다.
 
-#### 8. dooray_project_get_post
+#### 9. dooray_project_get_post
 
 특정 업무의 상세 정보를 조회합니다.
 
-#### 9. dooray_project_create_post
+#### 10. dooray_project_create_post
 
 새로운 업무를 생성합니다.
 
-#### 10. dooray_project_update_post
+#### 11. dooray_project_update_post
 
 기존 업무를 수정합니다.
 
-#### 11. dooray_project_set_post_workflow
+#### 12. dooray_project_set_post_workflow
 
 업무의 상태(워크플로우)를 변경합니다.
 
-#### 12. dooray_project_set_post_done
+#### 13. dooray_project_set_post_done
 
 업무를 완료 상태로 변경합니다.
 
+#### 14. dooray_project_set_post_parent
+
+업무의 상위 업무를 설정합니다.
+
+#### 15. dooray_project_list_workflows
+
+프로젝트의 워크플로우(업무 상태) 목록을 조회합니다.
+
 ### 업무 댓글 관련 도구 (4개)
 
-#### 13. dooray_project_create_post_comment
+#### 16. dooray_project_create_post_comment
 
 업무에 댓글을 생성합니다.
 
-#### 14. dooray_project_get_post_comments
+#### 17. dooray_project_get_post_comments
 
 업무의 댓글 목록을 조회합니다.
 
-#### 15. dooray_project_update_post_comment
+#### 18. dooray_project_update_post_comment
 
 업무 댓글을 수정합니다.
 
-#### 16. dooray_project_delete_post_comment
+#### 19. dooray_project_delete_post_comment
 
 업무 댓글을 삭제합니다.
 
@@ -209,7 +221,7 @@ CI=true ./gradlew test
 ./gradlew clean shadowJar
 
 # Docker 이미지 빌드
-docker build -t dooray-mcp:local --build-arg VERSION=0.3.0 .
+docker build -t dooray-mcp:local --build-arg VERSION=0.4.0 .
 ```
 
 ## 환경변수

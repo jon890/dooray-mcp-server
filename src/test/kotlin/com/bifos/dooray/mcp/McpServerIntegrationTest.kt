@@ -50,6 +50,9 @@ class McpServerIntegrationTest {
             "dooray_project_get_post_comments",
             "dooray_project_update_post_comment",
             "dooray_project_delete_post_comment",
+            "dooray_project_list_members",
+            "dooray_project_list_workflows",
+            "dooray_project_set_post_parent",
         )
     }
 
@@ -82,11 +85,11 @@ class McpServerIntegrationTest {
     }
 
     @Test
-    @DisplayName("서버가 16개 도구를 모두 등록해야 한다")
-    fun `server should register all 16 tools`(): Unit = runBlocking {
+    @DisplayName("서버가 19개 도구를 모두 등록해야 한다")
+    fun `server should register all 19 tools`(): Unit = runBlocking {
         val tools = client.listTools().tools
         assertNotNull(tools, "listTools() 응답이 null입니다")
-        assertEquals(16, tools.size, "도구 수가 16개여야 합니다. 실제: ${tools.map { it.name }}")
+        assertEquals(19, tools.size, "도구 수가 19개여야 합니다. 실제: ${tools.map { it.name }}")
     }
 
     @Test
@@ -127,9 +130,9 @@ class McpServerIntegrationTest {
     }
 
     @Test
-    @DisplayName("프로젝트 관련 도구는 11개여야 한다")
-    fun `project tools should be 11`(): Unit = runBlocking {
+    @DisplayName("프로젝트 관련 도구는 14개여야 한다")
+    fun `project tools should be 14`(): Unit = runBlocking {
         val projectTools = client.listTools().tools.filter { it.name.startsWith("dooray_project_") }
-        assertEquals(11, projectTools.size, "프로젝트 도구가 11개여야 합니다")
+        assertEquals(14, projectTools.size, "프로젝트 도구가 14개여야 합니다")
     }
 }

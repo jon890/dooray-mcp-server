@@ -4,9 +4,10 @@ Perform a full release for dooray-mcp-server.
 
 1. **Ask for version** if not provided as argument (e.g. `/release 0.4.0`)
 
-2. **Update versions** in:
+2. **Update versions and docs** in:
    - `gradle.properties`: `project.version=<VERSION>`
    - `src/main/kotlin/com/bifos/dooray/mcp/constants/VersionConst.kt`: `VERSION = "<VERSION>"` and add changelog entry
+   - `README.md`: update version badge, tool count, and tool list table if tools were added/removed
 
 3. **Build and test** (CI mode, integration tests excluded):
    ```
