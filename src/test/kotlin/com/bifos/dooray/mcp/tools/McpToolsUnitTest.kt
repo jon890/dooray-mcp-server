@@ -4,6 +4,7 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.*
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
@@ -699,6 +700,132 @@ class McpToolsUnitTest {
         val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "성공적으로 수정")
+    }
+
+    @Test
+    @DisplayName("프로젝트 업무 목록 조회 도구 - 신규 필터 파라미터가 API 호출에 전달되는지 검증")
+    fun testGetProjectPostsHandlerNewFilterParams() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockPost = Post(
+            id = "post1",
+            subject = "테스트 업무",
+            project = ProjectInfo(id = "project1", code = "TEST"),
+            taskNumber = "TEST-1",
+            closed = false,
+            createdAt = "2024-01-01T00:00:00+09:00",
+            updatedAt = "2024-01-02T00:00:00+09:00",
+            number = 1,
+            priority = "normal",
+            workflowClass = "working",
+            workflow = Workflow(id = "wf1", name = "진행 중"),
+            users = PostUsers(
+                from = PostUser(type = "member", member = Member(organizationMemberId = "member1")),
+                to = listOf(PostUser(type = "member", member = Member(organizationMemberId = "member2"))),
+                cc = emptyList()
+            )
+        )
+        val mockResponse = PostListResponse(
+            header = DoorayApiHeader(isSuccessful = true, resultCode = 0, resultMessage = "success"),
+            result = listOf(mockPost),
+            totalCount = 1
+        )
+
+        coEvery { mockDoorayClient.getPosts(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject {
+            put("project_id", "project1")
+            putJsonArray("from_member_ids") { add("member1") }
+            put("post_number", "42")
+            putJsonArray("post_workflow_ids") { add("wf1"); add("wf2") }
+            put("created_at", "2024-01-01T00:00:00+09:00")
+            put("updated_at", "2024-01-02T00:00:00+09:00")
+            put("due_at", "2024-12-31T18:00:00+09:00")
+        }
+
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+
+        // when
+        val handler = getProjectPostsHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then - 응답 성공 확인
+        assertTrue(result.content.isNotEmpty())
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"success\": true")
+
+        // then - 새 파라미터가 실제로 API에 전달됐는지 확인
+        coVerify {
+            mockDoorayClient.getPosts(
+                projectId = "project1",
+                page = any(),
+                size = any(),
+                fromMemberIds = listOf("member1"),
+                toMemberIds = any(),
+                ccMemberIds = any(),
+                tagIds = any(),
+                parentPostId = any(),
+                postNumber = "42",
+                postWorkflowClasses = any(),
+                postWorkflowIds = listOf("wf1", "wf2"),
+                milestoneIds = any(),
+                subjects = any(),
+                createdAt = "2024-01-01T00:00:00+09:00",
+                updatedAt = "2024-01-02T00:00:00+09:00",
+                dueAt = "2024-12-31T18:00:00+09:00",
+                order = any()
+            )
+        }
+    }
+
+    @Test
+    @DisplayName("프로젝트 업무 목록 조회 도구 - 새 필터 없이 기본 파라미터만 사용 시 null 전달")
+    fun testGetProjectPostsHandlerNewFilterParamsDefaultNull() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockResponse = PostListResponse(
+            header = DoorayApiHeader(isSuccessful = true, resultCode = 0, resultMessage = "success"),
+            result = emptyList(),
+            totalCount = 0
+        )
+
+        coEvery { mockDoorayClient.getPosts(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject { put("project_id", "project1") }
+
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+
+        // when
+        val handler = getProjectPostsHandler(mockDoorayClient, mockProjectResolver)
+        handler(mockk<ClientConnection>(), mockRequest)
+
+        // then - 미입력 파라미터는 null로 전달돼야 함
+        coVerify {
+            mockDoorayClient.getPosts(
+                projectId = "project1",
+                page = any(),
+                size = any(),
+                fromMemberIds = null,
+                toMemberIds = any(),
+                ccMemberIds = any(),
+                tagIds = any(),
+                parentPostId = any(),
+                postNumber = null,
+                postWorkflowClasses = any(),
+                postWorkflowIds = any(),
+                milestoneIds = any(),
+                subjects = any(),
+                createdAt = any(),
+                updatedAt = any(),
+                dueAt = null,
+                order = any()
+            )
+        }
     }
 
     @Test

@@ -84,6 +84,32 @@ fun getProjectPostsTool(): Tool {
                                 "정렬 조건 (postDueAt, postUpdatedAt, createdAt, 역순은 앞에 '-' 추가) (선택사항)"
                             )
                         }
+                        putJsonObject("from_member_ids") {
+                            put("type", "array")
+                            putJsonObject("items") { put("type", "string") }
+                            put("description", "업무를 등록한 멤버 ID 목록 (선택사항)")
+                        }
+                        putJsonObject("post_number") {
+                            put("type", "string")
+                            put("description", "업무 번호로 특정 업무 조회 (선택사항)")
+                        }
+                        putJsonObject("post_workflow_ids") {
+                            put("type", "array")
+                            putJsonObject("items") { put("type", "string") }
+                            put("description", "특정 워크플로우 ID 목록으로 필터 - post_workflow_classes보다 정밀한 필터 (선택사항)")
+                        }
+                        putJsonObject("created_at") {
+                            put("type", "string")
+                            put("description", "생성일 기준 필터 (ISO8601 형식, 예: 2024-01-01T00:00:00+09:00) (선택사항)")
+                        }
+                        putJsonObject("updated_at") {
+                            put("type", "string")
+                            put("description", "수정일 기준 필터 (ISO8601 형식) (선택사항)")
+                        }
+                        putJsonObject("due_at") {
+                            put("type", "string")
+                            put("description", "마감일 기준 필터 (ISO8601 형식, 예: 이번 주 마감 업무 조회 시 활용) (선택사항)")
+                        }
                     },
                 required = listOf("project_id")
             ),
@@ -147,19 +173,38 @@ fun getProjectPostsHandler(
             val parentPostId = request.arguments?.get("parent_post_id")?.jsonPrimitive?.content
             val subjects = request.arguments?.get("subjects")?.jsonPrimitive?.content
             val order = request.arguments?.get("order")?.jsonPrimitive?.content
+            val postNumber = request.arguments?.get("post_number")?.jsonPrimitive?.content
+            val createdAt = request.arguments?.get("created_at")?.jsonPrimitive?.content
+            val updatedAt = request.arguments?.get("updated_at")?.jsonPrimitive?.content
+            val dueAt = request.arguments?.get("due_at")?.jsonPrimitive?.content
+
+            val fromMemberIds =
+                request.arguments?.get("from_member_ids")?.let { element ->
+                    JsonUtils.parseStringArray(element.toString())
+                }
+            val postWorkflowIds =
+                request.arguments?.get("post_workflow_ids")?.let { element ->
+                    JsonUtils.parseStringArray(element.toString())
+                }
 
             val response =
                 doorayClient.getPosts(
                     projectId = projectId,
                     page = page,
                     size = size,
+                    fromMemberIds = fromMemberIds,
                     toMemberIds = toMemberIds,
                     ccMemberIds = ccMemberIds,
                     tagIds = tagIds,
                     parentPostId = parentPostId,
+                    postNumber = postNumber,
                     postWorkflowClasses = postWorkflowClasses,
+                    postWorkflowIds = postWorkflowIds,
                     milestoneIds = milestoneIds,
                     subjects = subjects,
+                    createdAt = createdAt,
+                    updatedAt = updatedAt,
+                    dueAt = dueAt,
                     order = order
                 )
 
