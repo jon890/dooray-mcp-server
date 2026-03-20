@@ -446,6 +446,14 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
         }
     }
 
+    override suspend fun getProjectWorkflows(projectId: String): ProjectWorkflowListResponse {
+        return executeApiCall(
+                operation = "GET /project/v1/projects/$projectId/workflows",
+                successMessage = "✅ 프로젝트 워크플로우 목록 조회 성공"
+        ) {
+            httpClient.get("/project/v1/projects/$projectId/workflows")
+        }
+    }
 
     override suspend fun getProjects(
             page: Int?,

@@ -140,4 +140,7 @@ interface DoorayClient {
         page: Int? = null,
         size: Int? = null
     ): ProjectMemberListResponse
+
+    /** 프로젝트의 워크플로우(업무 상태) 목록을 조회합니다. */
+    suspend fun getProjectWorkflows(projectId: String): ProjectWorkflowListResponse
 }

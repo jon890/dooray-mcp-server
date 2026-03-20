@@ -137,6 +137,9 @@ class DoorayMcpServer {
         // 17. 프로젝트 멤버 목록 조회
         addTool(getProjectMembersTool(), getProjectMembersHandler(doorayHttpClient, projectResolver))
 
+        // 18. 프로젝트 워크플로우 목록 조회
+        addTool(getProjectWorkflowsTool(), getProjectWorkflowsHandler(doorayHttpClient, projectResolver))
+
         log.info("Successfully added $toolCount tools to MCP server")
     }
 }
