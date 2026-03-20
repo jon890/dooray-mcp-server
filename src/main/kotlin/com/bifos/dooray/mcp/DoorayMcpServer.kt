@@ -140,6 +140,9 @@ class DoorayMcpServer {
         // 18. 프로젝트 워크플로우 목록 조회
         addTool(getProjectWorkflowsTool(), getProjectWorkflowsHandler(doorayHttpClient, projectResolver))
 
+        // 19. 프로젝트 업무 상위 업무 설정
+        addTool(setProjectPostParentTool(), setProjectPostParentHandler(doorayHttpClient, projectResolver))
+
         log.info("Successfully added $toolCount tools to MCP server")
     }
 }
