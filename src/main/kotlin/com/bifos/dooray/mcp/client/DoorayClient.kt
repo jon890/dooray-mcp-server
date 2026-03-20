@@ -29,8 +29,6 @@ interface DoorayClient {
         request: UpdateWikiPageRequest
     ): DoorayApiUnitResponse
 
-    // ============ 프로젝트 업무 관련 API ============
-
     /** 프로젝트 내에 업무를 생성합니다. */
     suspend fun createPost(projectId: String, request: CreatePostRequest): CreatePostApiResponse
 
@@ -90,8 +88,6 @@ interface DoorayClient {
         parentPostId: String
     ): DoorayApiUnitResponse
 
-    // ============ 업무 댓글 관련 API ============
-
     /** 업무에 댓글을 생성합니다. */
     suspend fun createPostComment(
         projectId: String,
@@ -130,7 +126,6 @@ interface DoorayClient {
         logId: String
     ): DeleteCommentResponse
 
-    // ============ 프로젝트 관련 API ============
     suspend fun getProjects(
         page: Int? = null,
         size: Int? = null,
