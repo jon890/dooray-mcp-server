@@ -1,18 +1,13 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
-import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.service.ProjectResolver
-import com.bifos.dooray.mcp.types.ToolSuccessResponse
-import com.bifos.dooray.mcp.utils.JsonUtils
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
-import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
@@ -30,17 +25,11 @@ fun deletePostCommentTool(): Tool {
                         }
                         putJsonObject("post_id") {
                             put("type", "string")
-                            put(
-                                "description",
-                                "업무 ID (dooray_project_list_posts로 조회 가능)"
-                            )
+                            put("description", "업무 ID (dooray_project_list_posts로 조회 가능)")
                         }
                         putJsonObject("log_id") {
                             put("type", "string")
-                            put(
-                                "description",
-                                "댓글 ID (dooray_project_get_post_comments로 조회 가능)"
-                            )
+                            put("description", "댓글 ID (dooray_project_get_post_comments로 조회 가능)")
                         }
                     },
                 required = listOf("project_id", "post_id", "log_id")
@@ -54,90 +43,21 @@ fun deletePostCommentHandler(
     doorayClient: DoorayClient,
     projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
-    return handler@{ _, request ->
-        try {
-            val projectInput = request.arguments?.get("project_id")?.jsonPrimitive?.content
-            val postId = request.arguments?.get("post_id")?.jsonPrimitive?.content
-            val logId = request.arguments?.get("log_id")?.jsonPrimitive?.content
-
-            if (projectInput.isNullOrBlank()) {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.PARAMETER_MISSING,
-                        message = "project_id 파라미터가 필요합니다.",
-                        code = "MISSING_PROJECT_ID"
-                    )
-                        .toErrorResponse()
-
-                return@handler CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                )
-            }
-
-            if (postId.isNullOrBlank()) {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.PARAMETER_MISSING,
-                        message = "post_id 파라미터가 필요합니다.",
-                        code = "MISSING_POST_ID"
-                    )
-                        .toErrorResponse()
-
-                return@handler CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                )
-            }
-
-            if (logId.isNullOrBlank()) {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.PARAMETER_MISSING,
-                        message = "log_id 파라미터가 필요합니다.",
-                        code = "MISSING_LOG_ID"
-                    )
-                        .toErrorResponse()
-
-                return@handler CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                )
-            }
-
-            val projectId = try {
-                projectResolver.resolveProjectId(projectInput)
-            } catch (e: ToolException) {
-                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(e.toErrorResponse()))))
-            }
+    return { _, request ->
+        toolHandler {
+            val projectId = projectResolver.resolveProjectId(
+                request.requireParam("project_id", "MISSING_PROJECT_ID", "project_id 파라미터가 필요합니다.")
+            )
+            val postId = request.requireParam("post_id", "MISSING_POST_ID", "post_id 파라미터가 필요합니다.")
+            val logId = request.requireParam("log_id", "MISSING_LOG_ID", "log_id 파라미터가 필요합니다.")
 
             val response = doorayClient.deletePostComment(projectId, postId, logId)
 
             if (response.header.isSuccessful) {
-                val successResponse =
-                    ToolSuccessResponse(data = null, message = "업무 댓글이 성공적으로 삭제되었습니다.")
-
-                CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(successResponse)))
-                )
+                successResult(message = "업무 댓글이 성공적으로 삭제되었습니다.")
             } else {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.API_ERROR,
-                        message = response.header.resultMessage,
-                        code = "DOORAY_API_${response.header.resultCode}"
-                    )
-                        .toErrorResponse()
-
-                CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
+                apiErrorResult(response.header)
             }
-        } catch (e: Exception) {
-            val errorResponse =
-                ToolException(
-                    type = ToolException.INTERNAL_ERROR,
-                    message = "내부 오류가 발생했습니다: ${e.message}",
-                    details = e.stackTraceToString()
-                )
-                    .toErrorResponse()
-
-            CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
         }
     }
 }

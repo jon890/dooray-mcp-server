@@ -1,12 +1,13 @@
 package com.bifos.dooray.mcp.types
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 /** MCP Tool 성공 응답 */
 @Serializable
-data class ToolSuccessResponse<T>(
+data class ToolSuccessResponse(
         val success: Boolean = true,
-        val data: T,
+        val data: JsonElement? = null,
         val message: String? = null
 )
 

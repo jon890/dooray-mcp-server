@@ -1,18 +1,13 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
-import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.service.ProjectResolver
-import com.bifos.dooray.mcp.types.ToolSuccessResponse
-import com.bifos.dooray.mcp.utils.JsonUtils
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
-import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
@@ -40,24 +35,14 @@ fun getProjectWorkflowsHandler(
     doorayClient: DoorayClient,
     projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
-    return handler@{ _, request ->
-        try {
-            val projectInput = request.arguments?.get("project_id")?.jsonPrimitive?.content
-
-            if (projectInput == null) {
-                val errorResponse = ToolException(
-                    type = ToolException.PARAMETER_MISSING,
-                    message = "project_id 파라미터가 필요합니다. dooray_project_list_projects를 사용해서 프로젝트 ID를 먼저 조회하세요.",
-                    code = "MISSING_PROJECT_ID"
-                ).toErrorResponse()
-                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
-            }
-
-            val projectId = try {
-                projectResolver.resolveProjectId(projectInput)
-            } catch (e: ToolException) {
-                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(e.toErrorResponse()))))
-            }
+    return { _, request ->
+        toolHandler {
+            val projectId = projectResolver.resolveProjectId(
+                request.requireParam(
+                    "project_id", "MISSING_PROJECT_ID",
+                    "project_id 파라미터가 필요합니다. dooray_project_list_projects를 사용해서 프로젝트 ID를 먼저 조회하세요."
+                )
+            )
 
             val response = doorayClient.getProjectWorkflows(projectId)
 
@@ -65,27 +50,13 @@ fun getProjectWorkflowsHandler(
                 val nextStepHint = "\n\n💡 다음 가능한 작업:\n" +
                         "- dooray_project_set_post_workflow: 조회한 workflow_id를 사용하여 업무 상태 변경\n" +
                         "- dooray_project_list_posts: post_workflow_ids 파라미터로 특정 상태 업무 필터링"
-
-                val successResponse = ToolSuccessResponse(
+                successResult(
                     data = response.result,
                     message = "🔄 프로젝트 워크플로우 목록을 성공적으로 조회했습니다 (총 ${response.result.size}개)$nextStepHint"
                 )
-                CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(successResponse))))
             } else {
-                val errorResponse = ToolException(
-                    type = ToolException.API_ERROR,
-                    message = response.header.resultMessage,
-                    code = "DOORAY_API_${response.header.resultCode}"
-                ).toErrorResponse()
-                CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
+                apiErrorResult(response.header)
             }
-        } catch (e: Exception) {
-            val errorResponse = ToolException(
-                type = ToolException.INTERNAL_ERROR,
-                message = "내부 오류가 발생했습니다: ${e.message}",
-                details = e.stackTraceToString()
-            ).toErrorResponse()
-            CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
         }
     }
 }

@@ -1,15 +1,11 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
-import com.bifos.dooray.mcp.exception.ToolException
-import com.bifos.dooray.mcp.types.ToolSuccessResponse
-import com.bifos.dooray.mcp.utils.JsonUtils
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
-import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -42,8 +38,7 @@ fun getWikisTool(): Tool {
 
 fun getWikisHandler(doorayClient: DoorayClient): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
     return { _, request ->
-        try {
-            // 기본값 처리: page는 0, size는 200
+        toolHandler {
             val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
             val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull() ?: 200
 
@@ -51,8 +46,6 @@ fun getWikisHandler(doorayClient: DoorayClient): suspend (ClientConnection, Call
 
             if (response.header.isSuccessful) {
                 val pageInfo = if (page == 0) "첫 번째 페이지" else "${page + 1}번째 페이지"
-
-                // 다음 단계 제안 메시지
                 val nextStepHint =
                     if (response.result.isNotEmpty()) {
                         "\n\n💡 다음 단계: 특정 프로젝트의 위키 페이지들을 보려면 dooray_wiki_list_pages를 사용하세요."
@@ -60,38 +53,13 @@ fun getWikisHandler(doorayClient: DoorayClient): suspend (ClientConnection, Call
                         if (page == 0) "\n\n📋 조회 결과가 없습니다. 접근 권한을 확인해주세요."
                         else "\n\n📄 더 이상 프로젝트가 없습니다."
                     }
-
-                val successResponse =
-                    ToolSuccessResponse(
-                        data = response.result,
-                        message =
-                            "📚 두레이 위키 프로젝트 목록을 성공적으로 조회했습니다 ($pageInfo, 총 ${response.result.size}개)$nextStepHint"
-                    )
-
-                CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(successResponse)))
+                successResult(
+                    data = response.result,
+                    message = "📚 두레이 위키 프로젝트 목록을 성공적으로 조회했습니다 ($pageInfo, 총 ${response.result.size}개)$nextStepHint"
                 )
             } else {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.API_ERROR,
-                        message = response.header.resultMessage,
-                        code = "DOORAY_API_${response.header.resultCode}"
-                    )
-                        .toErrorResponse()
-
-                CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
+                apiErrorResult(response.header)
             }
-        } catch (e: Exception) {
-            val errorResponse =
-                ToolException(
-                    type = ToolException.INTERNAL_ERROR,
-                    message = "내부 오류가 발생했습니다: ${e.message}",
-                    details = e.stackTraceToString()
-                )
-                    .toErrorResponse()
-
-            CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
         }
     }
 }

@@ -1,18 +1,14 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.client.DoorayClient
-import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.CreateCommentRequest
 import com.bifos.dooray.mcp.types.PostCommentBody
-import com.bifos.dooray.mcp.types.ToolSuccessResponse
-import com.bifos.dooray.mcp.utils.JsonUtils
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
-import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -32,10 +28,7 @@ fun createPostCommentTool(): Tool {
                         }
                         putJsonObject("post_id") {
                             put("type", "string")
-                            put(
-                                "description",
-                                "업무 ID (dooray_project_list_posts로 조회 가능)"
-                            )
+                            put("description", "업무 ID (dooray_project_list_posts로 조회 가능)")
                         }
                         putJsonObject("content") {
                             put("type", "string")
@@ -43,10 +36,7 @@ fun createPostCommentTool(): Tool {
                         }
                         putJsonObject("mime_type") {
                             put("type", "string")
-                            put(
-                                "description",
-                                "MIME 타입 (text/x-markdown 또는 text/html, 기본값: text/x-markdown)"
-                            )
+                            put("description", "MIME 타입 (text/x-markdown 또는 text/html, 기본값: text/x-markdown)")
                             put("default", "text/x-markdown")
                         }
                     },
@@ -61,100 +51,28 @@ fun createPostCommentHandler(
     doorayClient: DoorayClient,
     projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
-    return handler@{ _, request ->
-        try {
-            val projectInput = request.arguments?.get("project_id")?.jsonPrimitive?.content
-            val postId = request.arguments?.get("post_id")?.jsonPrimitive?.content
-            val content = request.arguments?.get("content")?.jsonPrimitive?.content
-            val mimeType =
-                request.arguments?.get("mime_type")?.jsonPrimitive?.content ?: "text/x-markdown"
+    return { _, request ->
+        toolHandler {
+            val projectId = projectResolver.resolveProjectId(
+                request.requireParam("project_id", "MISSING_PROJECT_ID", "project_id 파라미터가 필요합니다.")
+            )
+            val postId = request.requireParam("post_id", "MISSING_POST_ID", "post_id 파라미터가 필요합니다.")
+            val content = request.requireParam("content", "MISSING_CONTENT", "content 파라미터가 필요합니다.")
+            val mimeType = request.arguments?.get("mime_type")?.jsonPrimitive?.content ?: "text/x-markdown"
 
-            if (projectInput.isNullOrBlank()) {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.PARAMETER_MISSING,
-                        message = "project_id 파라미터가 필요합니다.",
-                        code = "MISSING_PROJECT_ID"
-                    )
-                        .toErrorResponse()
-
-                return@handler CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                )
-            }
-
-            if (postId.isNullOrBlank()) {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.PARAMETER_MISSING,
-                        message = "post_id 파라미터가 필요합니다.",
-                        code = "MISSING_POST_ID"
-                    )
-                        .toErrorResponse()
-
-                return@handler CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                )
-            }
-
-            if (content.isNullOrBlank()) {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.PARAMETER_MISSING,
-                        message = "content 파라미터가 필요합니다.",
-                        code = "MISSING_CONTENT"
-                    )
-                        .toErrorResponse()
-
-                return@handler CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(errorResponse)))
-                )
-            }
-
-            val projectId = try {
-                projectResolver.resolveProjectId(projectInput)
-            } catch (e: ToolException) {
-                return@handler CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(e.toErrorResponse()))))
-            }
-
-            val createRequest =
-                CreateCommentRequest(
-                    body = PostCommentBody(mimeType = mimeType, content = content)
-                )
-
-            val response = doorayClient.createPostComment(projectId, postId, createRequest)
+            val response = doorayClient.createPostComment(
+                projectId, postId,
+                CreateCommentRequest(body = PostCommentBody(mimeType = mimeType, content = content))
+            )
 
             if (response.header.isSuccessful) {
-                val successResponse =
-                    ToolSuccessResponse(
-                        data = response.result,
-                        message = "업무 댓글이 성공적으로 생성되었습니다. (댓글 ID: ${response.result.id})"
-                    )
-
-                CallToolResult(
-                    content = listOf(TextContent(JsonUtils.toJsonString(successResponse)))
+                successResult(
+                    data = response.result,
+                    message = "업무 댓글이 성공적으로 생성되었습니다. (댓글 ID: ${response.result.id})"
                 )
             } else {
-                val errorResponse =
-                    ToolException(
-                        type = ToolException.API_ERROR,
-                        message = response.header.resultMessage,
-                        code = "DOORAY_API_${response.header.resultCode}"
-                    )
-                        .toErrorResponse()
-
-                CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
+                apiErrorResult(response.header)
             }
-        } catch (e: Exception) {
-            val errorResponse =
-                ToolException(
-                    type = ToolException.INTERNAL_ERROR,
-                    message = "내부 오류가 발생했습니다: ${e.message}",
-                    details = e.stackTraceToString()
-                )
-                    .toErrorResponse()
-
-            CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(errorResponse))))
         }
     }
 }
