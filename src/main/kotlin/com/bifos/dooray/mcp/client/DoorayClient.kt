@@ -138,4 +138,11 @@ interface DoorayClient {
         scope: String? = null,
         state: String? = null
     ): ProjectListResponse
+
+    /** 프로젝트 멤버 목록을 조회합니다. */
+    suspend fun getProjectMembers(
+        projectId: String,
+        page: Int? = null,
+        size: Int? = null
+    ): ProjectMemberListResponse
 }

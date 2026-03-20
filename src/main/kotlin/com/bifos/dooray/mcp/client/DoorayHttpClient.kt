@@ -435,6 +435,23 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
 
     // ============ 프로젝트 관련 API 구현 ============
 
+    override suspend fun getProjectMembers(
+            projectId: String,
+            page: Int?,
+            size: Int?
+    ): ProjectMemberListResponse {
+        return executeApiCall(
+                operation = "GET /project/v1/projects/$projectId/members",
+                successMessage = "✅ 프로젝트 멤버 목록 조회 성공"
+        ) {
+            httpClient.get("/project/v1/projects/$projectId/members") {
+                parameter("member", "me")
+                page?.let { parameter("page", it) }
+                size?.let { parameter("size", it) }
+            }
+        }
+    }
+
     override suspend fun getProjects(
             page: Int?,
             size: Int?,

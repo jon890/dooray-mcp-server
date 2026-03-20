@@ -138,6 +138,11 @@ class DoorayMcpServer {
         // 16. 업무 댓글 삭제
         addTool(deletePostCommentTool(), deletePostCommentHandler(doorayHttpClient, projectResolver))
 
+        // ============ 프로젝트 멤버 관련 도구들 ============
+
+        // 17. 프로젝트 멤버 목록 조회
+        addTool(getProjectMembersTool(), getProjectMembersHandler(doorayHttpClient, projectResolver))
+
         log.info("Successfully added $toolCount tools to MCP server")
     }
 }
