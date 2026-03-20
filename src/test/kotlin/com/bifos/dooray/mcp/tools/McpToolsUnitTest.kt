@@ -702,6 +702,100 @@ class McpToolsUnitTest {
         assertContains(responseText, "성공적으로 수정")
     }
 
+    // === 프로젝트 멤버 조회 도구 테스트 ===
+
+    @Test
+    @DisplayName("프로젝트 멤버 목록 조회 도구 - 성공 케이스")
+    fun testGetProjectMembersHandlerSuccess() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockMembers = listOf(
+            ProjectMember(
+                organizationMemberId = "member1",
+                name = "홍길동",
+                emailAddress = "hong@example.com",
+                department = "개발팀"
+            ),
+            ProjectMember(
+                organizationMemberId = "member2",
+                name = "김철수",
+                emailAddress = "kim@example.com"
+            )
+        )
+        val mockResponse = ProjectMemberListResponse(
+            header = DoorayApiHeader(isSuccessful = true, resultCode = 0, resultMessage = "success"),
+            result = mockMembers,
+            totalCount = 2
+        )
+        coEvery { mockDoorayClient.getProjectMembers(any(), any(), any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject { put("project_id", "project1") }
+
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+
+        // when
+        val handler = getProjectMembersHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"success\": true")
+        assertContains(responseText, "홍길동")
+        assertContains(responseText, "member1")
+        assertContains(responseText, "총 2명")
+    }
+
+    @Test
+    @DisplayName("프로젝트 멤버 목록 조회 도구 - project_id 누락 에러")
+    fun testGetProjectMembersHandlerMissingProjectId() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject {}
+
+        val mockProjectResolver = mockk<ProjectResolver>(relaxed = true)
+
+        // when
+        val handler = getProjectMembersHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "MISSING_PROJECT_ID")
+    }
+
+    @Test
+    @DisplayName("프로젝트 멤버 목록 조회 도구 - API 에러 케이스")
+    fun testGetProjectMembersHandlerApiError() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+        val mockResponse = ProjectMemberListResponse(
+            header = DoorayApiHeader(isSuccessful = false, resultCode = 403, resultMessage = "Forbidden"),
+            result = emptyList()
+        )
+        coEvery { mockDoorayClient.getProjectMembers(any(), any(), any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns buildJsonObject { put("project_id", "project1") }
+
+        val mockProjectResolver = mockk<ProjectResolver>()
+        coEvery { mockProjectResolver.resolveProjectId("project1") } returns "project1"
+
+        // when
+        val handler = getProjectMembersHandler(mockDoorayClient, mockProjectResolver)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        val responseText = (result.content.first() as TextContent).text
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "DOORAY_API_403")
+        assertContains(responseText, "Forbidden")
+    }
+
     @Test
     @DisplayName("프로젝트 업무 목록 조회 도구 - 신규 필터 파라미터가 API 호출에 전달되는지 검증")
     fun testGetProjectPostsHandlerNewFilterParams() = runTest {
