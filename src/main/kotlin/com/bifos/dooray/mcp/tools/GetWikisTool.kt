@@ -7,9 +7,6 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 
 fun getWikisTool(): Tool {
     return Tool(
@@ -30,8 +27,8 @@ fun getWikisTool(): Tool {
 fun getWikisHandler(doorayClient: DoorayClient): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
     return { _, request ->
         toolHandler {
-            val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
-            val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull() ?: 200
+            val page = request.intParam("page", 0)
+            val size = request.intParam("size", 200)
 
             val response = doorayClient.getWikis(page, size)
 

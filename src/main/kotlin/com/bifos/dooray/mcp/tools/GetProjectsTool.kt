@@ -9,7 +9,6 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
@@ -59,8 +58,8 @@ fun getProjectsHandler(
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
     return { _, request ->
         toolHandler {
-            val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull()
-            val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull()
+            val page = request.intParamOrNull("page")
+            val size = request.intParamOrNull("size")
             val type = request.optionalParam("type")
             val scope = request.optionalParam("scope")
             val state = request.optionalParam("state")

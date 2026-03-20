@@ -9,7 +9,6 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
@@ -56,8 +55,8 @@ fun getPostCommentsHandler(
                 request.requireParam("project_id", "MISSING_PROJECT_ID", "project_id 파라미터가 필요합니다.")
             )
             val postId = request.requireParam("post_id", "MISSING_POST_ID", "post_id 파라미터가 필요합니다.")
-            val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull()
-            val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull()
+            val page = request.intParamOrNull("page")
+            val size = request.intParamOrNull("size")
             val order = request.optionalParam("order")
 
             val response = doorayClient.getPostComments(projectId, postId, page, size, order)

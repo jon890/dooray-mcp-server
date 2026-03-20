@@ -8,9 +8,6 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 
 fun getProjectMembersTool(): Tool {
     return Tool(
@@ -42,8 +39,8 @@ fun getProjectMembersHandler(
                     "project_id 파라미터가 필요합니다. dooray_project_list_projects를 사용해서 프로젝트 ID를 먼저 조회하세요."
                 )
             )
-            val page = request.arguments?.get("page")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
-            val size = request.arguments?.get("size")?.jsonPrimitive?.content?.toIntOrNull() ?: 100
+            val page = request.intParam("page", 0)
+            val size = request.intParam("size", 100)
 
             val response = doorayClient.getProjectMembers(projectId, page, size)
 
