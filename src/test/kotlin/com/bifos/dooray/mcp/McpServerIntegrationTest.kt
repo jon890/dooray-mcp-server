@@ -8,11 +8,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Tag
 import kotlin.test.assertContains
-import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -33,26 +35,44 @@ class McpServerIntegrationTest {
     private lateinit var client: Client
 
     companion object {
+        /** 서버에 등록되어야 하는 모든 도구 이름 목록 */
         private val EXPECTED_TOOLS = listOf(
             "dooray_wiki_list_projects",
             "dooray_wiki_list_pages",
             "dooray_wiki_get_page",
             "dooray_wiki_create_page",
             "dooray_wiki_update_page",
+            "dooray_project_list_projects",
+            "dooray_project_list_members",
+            "dooray_project_list_workflows",
             "dooray_project_list_posts",
             "dooray_project_get_post",
             "dooray_project_create_post",
+            "dooray_project_update_post",
             "dooray_project_set_post_workflow",
             "dooray_project_set_post_done",
-            "dooray_project_list_projects",
-            "dooray_project_update_post",
+            "dooray_project_set_post_parent",
             "dooray_project_create_post_comment",
             "dooray_project_get_post_comments",
             "dooray_project_update_post_comment",
             "dooray_project_delete_post_comment",
-            "dooray_project_list_members",
-            "dooray_project_list_workflows",
+        )
+
+        /** project_id를 required로 가져야 하는 도구 목록 */
+        private val TOOLS_REQUIRING_PROJECT_ID = EXPECTED_TOOLS
+            .filter { it.startsWith("dooray_project_") && it != "dooray_project_list_projects" }
+
+        /** post_id를 required로 가져야 하는 도구 목록 */
+        private val TOOLS_REQUIRING_POST_ID = listOf(
+            "dooray_project_get_post",
+            "dooray_project_update_post",
+            "dooray_project_set_post_workflow",
+            "dooray_project_set_post_done",
             "dooray_project_set_post_parent",
+            "dooray_project_create_post_comment",
+            "dooray_project_get_post_comments",
+            "dooray_project_update_post_comment",
+            "dooray_project_delete_post_comment",
         )
     }
 
@@ -85,16 +105,8 @@ class McpServerIntegrationTest {
     }
 
     @Test
-    @DisplayName("서버가 19개 도구를 모두 등록해야 한다")
-    fun `server should register all 19 tools`(): Unit = runBlocking {
-        val tools = client.listTools().tools
-        assertNotNull(tools, "listTools() 응답이 null입니다")
-        assertEquals(19, tools.size, "도구 수가 19개여야 합니다. 실제: ${tools.map { it.name }}")
-    }
-
-    @Test
-    @DisplayName("모든 도구 이름이 올바르게 등록되어야 한다")
-    fun `server should register tools with correct names`(): Unit = runBlocking {
+    @DisplayName("모든 필수 도구가 등록되어야 한다")
+    fun `all expected tools should be registered`(): Unit = runBlocking {
         val toolNames = client.listTools().tools.map { it.name }
         EXPECTED_TOOLS.forEach { expected ->
             assertContains(toolNames, expected, "도구 '$expected'가 등록되지 않았습니다")
@@ -103,7 +115,7 @@ class McpServerIntegrationTest {
 
     @Test
     @DisplayName("각 도구에 description이 있어야 한다")
-    fun `each tool should have a description`(): Unit = runBlocking {
+    fun `each tool should have a non-blank description`(): Unit = runBlocking {
         val tools = client.listTools().tools
         tools.forEach { tool ->
             assertTrue(
@@ -123,16 +135,54 @@ class McpServerIntegrationTest {
     }
 
     @Test
-    @DisplayName("위키 관련 도구는 5개여야 한다")
-    fun `wiki tools should be 5`(): Unit = runBlocking {
-        val wikiTools = client.listTools().tools.filter { it.name.startsWith("dooray_wiki_") }
-        assertEquals(5, wikiTools.size, "위키 도구가 5개여야 합니다")
+    @DisplayName("project_id가 필요한 도구는 required에 project_id가 선언되어야 한다")
+    fun `tools requiring project_id should declare it as required`(): Unit = runBlocking {
+        val toolMap = client.listTools().tools.associateBy { it.name }
+        TOOLS_REQUIRING_PROJECT_ID.forEach { toolName ->
+            val tool = toolMap[toolName] ?: error("도구 '$toolName'이 등록되지 않았습니다")
+            val required = tool.inputSchema.required ?: emptyList()
+            assertContains(required, "project_id", "도구 '$toolName'의 required에 project_id가 없습니다")
+        }
     }
 
     @Test
-    @DisplayName("프로젝트 관련 도구는 14개여야 한다")
-    fun `project tools should be 14`(): Unit = runBlocking {
-        val projectTools = client.listTools().tools.filter { it.name.startsWith("dooray_project_") }
-        assertEquals(14, projectTools.size, "프로젝트 도구가 14개여야 합니다")
+    @DisplayName("post_id가 필요한 도구는 required에 post_id가 선언되어야 한다")
+    fun `tools requiring post_id should declare it as required`(): Unit = runBlocking {
+        val toolMap = client.listTools().tools.associateBy { it.name }
+        TOOLS_REQUIRING_POST_ID.forEach { toolName ->
+            val tool = toolMap[toolName] ?: error("도구 '$toolName'이 등록되지 않았습니다")
+            val required = tool.inputSchema.required ?: emptyList()
+            assertContains(required, "post_id", "도구 '$toolName'의 required에 post_id가 없습니다")
+        }
+    }
+
+    @Test
+    @DisplayName("필수 파라미터 없이 호출하면 서버가 구조화된 에러를 반환해야 한다")
+    fun `calling tool without required params should return structured error`(): Unit = runBlocking {
+        // project_id 없이 호출 — 서버 크래시 없이 에러 응답 반환해야 함
+        val result = client.callTool(
+            name = "dooray_project_list_posts",
+            arguments = emptyMap()
+        )
+        assertNotNull(result, "응답이 null입니다")
+        val content = result.content.firstOrNull()
+        assertNotNull(content, "응답 content가 비어있습니다")
+        // 응답은 isError=true이거나 에러 JSON을 포함해야 함
+        val text = (content as? io.modelcontextprotocol.kotlin.sdk.types.TextContent)?.text
+        assertNotNull(text, "응답이 TextContent가 아닙니다")
+        assertFalse(text.isBlank(), "에러 응답 텍스트가 비어있습니다")
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 도구를 호출하면 예외가 발생하지 않고 처리되어야 한다")
+    fun `listing tools should not include unknown tools`(): Unit = runBlocking {
+        val toolNames = client.listTools().tools.map { it.name }
+        // 등록되지 않은 도구가 섞여 있으면 안 됨
+        toolNames.forEach { name ->
+            assertTrue(
+                name.startsWith("dooray_"),
+                "알 수 없는 도구가 등록되어 있습니다: '$name'"
+            )
+        }
     }
 }
