@@ -98,8 +98,6 @@ class DoorayMcpServer {
         // 5. 위키 페이지 수정
         addTool(updateWikiPageTool(), updateWikiPageHandler(doorayHttpClient))
 
-        // ============ 프로젝트 업무 관련 도구들 ============
-
         // 6. 프로젝트 업무 목록 조회
         addTool(getProjectPostsTool(), getProjectPostsHandler(doorayHttpClient, projectResolver))
 
@@ -124,8 +122,6 @@ class DoorayMcpServer {
         // 12. 프로젝트 업무 수정
         addTool(updateProjectPostTool(), updateProjectPostHandler(doorayHttpClient, projectResolver))
 
-        // ============ 업무 댓글 관련 도구들 ============
-
         // 13. 업무 댓글 생성
         addTool(createPostCommentTool(), createPostCommentHandler(doorayHttpClient, projectResolver))
 
@@ -137,8 +133,6 @@ class DoorayMcpServer {
 
         // 16. 업무 댓글 삭제
         addTool(deletePostCommentTool(), deletePostCommentHandler(doorayHttpClient, projectResolver))
-
-        // ============ 프로젝트 멤버 관련 도구들 ============
 
         // 17. 프로젝트 멤버 목록 조회
         addTool(getProjectMembersTool(), getProjectMembersHandler(doorayHttpClient, projectResolver))

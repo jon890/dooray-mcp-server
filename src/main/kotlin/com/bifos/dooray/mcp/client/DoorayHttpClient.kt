@@ -218,8 +218,6 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
         ) { httpClient.put("/wiki/v1/wikis/$wikiId/pages/$pageId") { setBody(request) } }
     }
 
-    // ============ 프로젝트 업무 관련 API 구현 ============
-
     override suspend fun createPost(
             projectId: String,
             request: CreatePostRequest
@@ -359,8 +357,6 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
         }
     }
 
-    // ============ 업무 댓글 관련 API 구현 ============
-
     override suspend fun createPostComment(
             projectId: String,
             postId: String,
@@ -433,8 +429,6 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
         ) { httpClient.delete("/project/v1/projects/$projectId/posts/$postId/logs/$logId") }
     }
 
-    // ============ 프로젝트 관련 API 구현 ============
-
     override suspend fun getProjectMembers(
             projectId: String,
             page: Int?,
@@ -451,6 +445,7 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
             }
         }
     }
+
 
     override suspend fun getProjects(
             page: Int?,
