@@ -21,20 +21,8 @@ fun getProjectPostsTool(): Tool {
             ToolSchema(
                 properties =
                     buildJsonObject {
-                        putJsonObject("project_id") {
-                            put("type", "string")
-                            put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
-                        }
-                        putJsonObject("page") {
-                            put("type", "integer")
-                            put("description", "페이지 번호 (기본값: 0)")
-                            put("default", 0)
-                        }
-                        putJsonObject("size") {
-                            put("type", "integer")
-                            put("description", "페이지 크기 (기본값: 20, 최대: 100)")
-                            put("default", 20)
-                        }
+                        projectIdProperty()
+                        paginationProperties(defaultSize = 20, maxSize = 100)
                         putJsonObject("to_member_ids") {
                             put("type", "array")
                             putJsonObject("items") { put("type", "string") }

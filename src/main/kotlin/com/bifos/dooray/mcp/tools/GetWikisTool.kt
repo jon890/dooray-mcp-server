@@ -19,16 +19,7 @@ fun getWikisTool(): Tool {
             ToolSchema(
                 properties =
                     buildJsonObject {
-                        putJsonObject("page") {
-                            put("type", "integer")
-                            put("description", "조회할 페이지 번호 (0부터 시작, 기본값: 0)")
-                            put("default", 0)
-                        }
-                        putJsonObject("size") {
-                            put("type", "integer")
-                            put("description", "한 페이지당 결과 수 (기본값: 200)")
-                            put("default", 200)
-                        }
+                        paginationProperties(defaultSize = 200)
                     }
             ),
         outputSchema = null,

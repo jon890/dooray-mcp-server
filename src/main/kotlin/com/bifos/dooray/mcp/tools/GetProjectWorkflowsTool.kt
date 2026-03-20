@@ -19,10 +19,7 @@ fun getProjectWorkflowsTool(): Tool {
                 "각 워크플로우는 class(backlog/registered/working/closed)로 분류됩니다.",
         inputSchema = ToolSchema(
             properties = buildJsonObject {
-                putJsonObject("project_id") {
-                    put("type", "string")
-                    put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
-                }
+                projectIdProperty()
             },
             required = listOf("project_id")
         ),

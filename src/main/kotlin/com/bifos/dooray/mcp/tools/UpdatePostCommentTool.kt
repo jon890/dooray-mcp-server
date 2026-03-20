@@ -22,14 +22,8 @@ fun updatePostCommentTool(): Tool {
             ToolSchema(
                 properties =
                     buildJsonObject {
-                        putJsonObject("project_id") {
-                            put("type", "string")
-                            put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
-                        }
-                        putJsonObject("post_id") {
-                            put("type", "string")
-                            put("description", "업무 ID (dooray_project_list_posts로 조회 가능)")
-                        }
+                        projectIdProperty()
+                        postIdProperty()
                         putJsonObject("log_id") {
                             put("type", "string")
                             put("description", "댓글 ID (dooray_project_get_post_comments로 조회 가능)")

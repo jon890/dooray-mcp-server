@@ -21,14 +21,8 @@ fun getPostCommentsTool(): Tool {
             ToolSchema(
                 properties =
                     buildJsonObject {
-                        putJsonObject("project_id") {
-                            put("type", "string")
-                            put("description", "프로젝트 ID 또는 프로젝트 코드 (예: 'my-project' 또는 숫자 ID). 프로젝트 코드는 dooray_project_list_projects로 확인 가능합니다.")
-                        }
-                        putJsonObject("post_id") {
-                            put("type", "string")
-                            put("description", "업무 ID (dooray_project_list_posts로 조회 가능)")
-                        }
+                        projectIdProperty()
+                        postIdProperty()
                         putJsonObject("page") {
                             put("type", "number")
                             put("description", "페이지 번호 (0부터 시작, 기본값: 0)")
