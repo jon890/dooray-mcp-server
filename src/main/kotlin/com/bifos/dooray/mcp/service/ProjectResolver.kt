@@ -61,6 +61,15 @@ class ProjectResolver(private val doorayClient: DoorayClient) {
             return resolved.id
         }
 
+        // Not found in the accessible-projects list. If the input is a numeric project ID,
+        // pass it through as-is: the user may have access to a post inside a project they are
+        // not a member of (so it never appears in getProjects), and the downstream Dooray API
+        // will enforce authorization. Only non-numeric codes/names that can't be resolved error.
+        if (input.isNotEmpty() && input.all { it.isDigit() }) {
+            log.debug("ProjectResolver: '{}' not in accessible projects; treating as raw project ID", input)
+            return input
+        }
+
         // Not found — throw with helpful message listing available codes
         val availableCodes = cacheByCode.keys.sorted().joinToString(", ")
         throw ToolException(

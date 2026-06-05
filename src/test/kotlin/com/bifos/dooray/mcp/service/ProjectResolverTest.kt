@@ -122,6 +122,20 @@ class ProjectResolverTest {
     }
 
     @Test
+    @DisplayName("접근 권한 없는 프로젝트의 숫자 ID는 refresh 후에도 그대로 통과시킨다 (Post 접근 케이스)")
+    fun testUnknownNumericIdPassesThrough() = runTest {
+        // given: getProjects only returns projects the user is a member of (no "5555555555")
+        coEvery { mockDoorayClient.getProjects(page = 0, size = 100, any(), any(), any()) } returns
+            ProjectListResponse(header = successHeader, result = projects, totalCount = projects.size)
+
+        // when: a numeric ID outside the accessible-projects list (user has post access only)
+        val result = projectResolver.resolveProjectId("5555555555")
+
+        // then: passed through as-is; downstream API enforces authorization
+        assertEquals("5555555555", result)
+    }
+
+    @Test
     @DisplayName("두 번째 호출에서는 캐시를 사용한다 (API 1회만 호출)")
     fun testCacheIsUsedOnSecondCall() = runTest {
         // given
