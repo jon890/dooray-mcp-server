@@ -87,6 +87,7 @@ class DoorayMcpServer {
         addTool(getWikiPageTool(), getWikiPageHandler(doorayHttpClient))
         addTool(createWikiPageTool(), createWikiPageHandler(doorayHttpClient))
         addTool(updateWikiPageTool(), updateWikiPageHandler(doorayHttpClient))
+        addTool(getWikiPageCommentsTool(), getWikiPageCommentsHandler(doorayHttpClient))
         addTool(getProjectPostsTool(), getProjectPostsHandler(doorayHttpClient, projectResolver))
         addTool(getProjectPostTool(), getProjectPostHandler(doorayHttpClient, projectResolver))
         addTool(createProjectPostTool(), createProjectPostHandler(doorayHttpClient, projectResolver))

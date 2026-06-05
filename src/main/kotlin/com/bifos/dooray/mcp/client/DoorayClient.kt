@@ -29,6 +29,14 @@ interface DoorayClient {
         request: UpdateWikiPageRequest
     ): DoorayApiUnitResponse
 
+    /** 위키 페이지의 댓글 목록을 조회합니다. (최신순) */
+    suspend fun getWikiPageComments(
+        wikiId: String,
+        pageId: String,
+        page: Int? = null,
+        size: Int? = null
+    ): WikiCommentListResponse
+
     /** 프로젝트 내에 업무를 생성합니다. */
     suspend fun createPost(projectId: String, request: CreatePostRequest): CreatePostApiResponse
 
