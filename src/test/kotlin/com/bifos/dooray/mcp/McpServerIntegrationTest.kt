@@ -11,7 +11,6 @@ import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Tag
 import kotlin.test.assertContains
 import kotlin.test.assertFalse
@@ -88,7 +87,7 @@ class McpServerIntegrationTest {
     @BeforeAll
     fun setup(): Unit = runBlocking {
         val jarPath = "build/libs/dooray-mcp-server-${VersionConst.VERSION}-all.jar"
-        assumeTrue(
+        assertTrue(
             java.io.File(jarPath).exists(),
             "shadowJar not found at $jarPath — run ./gradlew shadowJar first"
         )
@@ -124,6 +123,15 @@ class McpServerIntegrationTest {
         EXPECTED_TOOLS.forEach { expected ->
             assertContains(toolNames, expected, "도구 '$expected'가 등록되지 않았습니다")
         }
+    }
+
+    @Test
+    @DisplayName("정적 도구 목록은 변경 알림을 지원하지 않아야 한다")
+    fun `static tool list should not advertise list changed notifications`(): Unit = runBlocking {
+        assertFalse(
+            client.serverCapabilities?.tools?.listChanged ?: true,
+            "정적 도구 목록인데 tools.listChanged가 true입니다"
+        )
     }
 
     @Test

@@ -18,6 +18,7 @@ repositories {
 
 dependencies {
     implementation(libs.mcp.kotlin.sdk)
+    implementation(platform(libs.ktor.bom))
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
@@ -32,10 +33,9 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform {
-        // CI 환경에서는 통합 테스트 제외
-        if (System.getenv("CI") == "true") {
-            excludeTags("dooray-integration", "mcp-integration")
-        }
+        // 기본 빌드에서는 외부 Dooray API와 서브프로세스 통합 시험을 실행하지 않는다.
+        // 통합 시험은 자격 증명과 영향 범위가 명시된 전용 작업에서만 실행한다.
+        excludeTags("dooray-integration", "mcp-integration")
     }
 }
 
