@@ -4,7 +4,7 @@ NHN Dooray 서비스의 MCP(Model Context Protocol) 서버입니다.
 
 ## 주요 기능
 
-- **위키 관리**: 위키 조회, 생성, 수정
+- **위키 관리**: 위키 조회, 생성, 수정, 댓글 조회
 - **업무 관리**: 업무 조회, 생성, 수정, 상태 변경
 - **댓글 관리**: 업무 댓글 생성, 조회, 수정, 삭제
 - **프로젝트 코드 자동 매핑**: 프로젝트 이름(코드)을 입력하면 내부적으로 ID를 자동 resolve (캐시 기반)
@@ -71,9 +71,9 @@ docker run -e DOORAY_API_KEY="your_api_key" \
            bifos/dooray-mcp:latest
 ```
 
-## 사용 가능한 도구 (총 19개)
+## 사용 가능한 도구 (총 20개)
 
-### 위키 관련 도구 (5개)
+### 위키 관련 도구 (6개)
 
 #### 1. dooray_wiki_list_projects
 
@@ -95,13 +95,17 @@ docker run -e DOORAY_API_KEY="your_api_key" \
 
 기존 위키 페이지를 수정합니다.
 
+#### 6. dooray_wiki_get_page_comments
+
+특정 위키 페이지의 댓글 목록을 조회합니다. (최신순, 페이징 지원)
+
 ### 프로젝트 관련 도구 (2개)
 
-#### 6. dooray_project_list_projects
+#### 7. dooray_project_list_projects
 
 접근 가능한 프로젝트 목록을 조회합니다.
 
-#### 7. dooray_project_list_members
+#### 8. dooray_project_list_members
 
 프로젝트 멤버 목록을 조회합니다. 업무 담당자/참조자 지정 시 사용합니다.
 
@@ -109,53 +113,53 @@ docker run -e DOORAY_API_KEY="your_api_key" \
 
 > 💡 `project_id` 파라미터에 프로젝트 ID 또는 **프로젝트 코드(이름)**를 입력할 수 있습니다. 서버가 내부적으로 자동으로 ID를 resolve합니다.
 
-#### 8. dooray_project_list_posts
+#### 9. dooray_project_list_posts
 
 프로젝트의 업무 목록을 조회합니다.
 
-#### 9. dooray_project_get_post
+#### 10. dooray_project_get_post
 
 특정 업무의 상세 정보를 조회합니다.
 
-#### 10. dooray_project_create_post
+#### 11. dooray_project_create_post
 
 새로운 업무를 생성합니다.
 
-#### 11. dooray_project_update_post
+#### 12. dooray_project_update_post
 
 기존 업무를 수정합니다.
 
-#### 12. dooray_project_set_post_workflow
+#### 13. dooray_project_set_post_workflow
 
 업무의 상태(워크플로우)를 변경합니다.
 
-#### 13. dooray_project_set_post_done
+#### 14. dooray_project_set_post_done
 
 업무를 완료 상태로 변경합니다.
 
-#### 14. dooray_project_set_post_parent
+#### 15. dooray_project_set_post_parent
 
 업무의 상위 업무를 설정합니다.
 
-#### 15. dooray_project_list_workflows
+#### 16. dooray_project_list_workflows
 
 프로젝트의 워크플로우(업무 상태) 목록을 조회합니다.
 
 ### 업무 댓글 관련 도구 (4개)
 
-#### 16. dooray_project_create_post_comment
+#### 17. dooray_project_create_post_comment
 
 업무에 댓글을 생성합니다.
 
-#### 17. dooray_project_get_post_comments
+#### 18. dooray_project_get_post_comments
 
 업무의 댓글 목록을 조회합니다.
 
-#### 18. dooray_project_update_post_comment
+#### 19. dooray_project_update_post_comment
 
 업무 댓글을 수정합니다.
 
-#### 19. dooray_project_delete_post_comment
+#### 20. dooray_project_delete_post_comment
 
 업무 댓글을 삭제합니다.
 

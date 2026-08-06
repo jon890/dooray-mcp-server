@@ -218,6 +218,23 @@ class DoorayHttpClient(private val baseUrl: String, private val doorayApiKey: St
         ) { httpClient.put("/wiki/v1/wikis/$wikiId/pages/$pageId") { setBody(request) } }
     }
 
+    override suspend fun getWikiPageComments(
+            wikiId: String,
+            pageId: String,
+            page: Int?,
+            size: Int?
+    ): WikiCommentListResponse {
+        return executeApiCall(
+                operation = "GET /wiki/v1/wikis/$wikiId/pages/$pageId/comments",
+                successMessage = "✅ 위키 댓글 목록 조회 성공"
+        ) {
+            httpClient.get("/wiki/v1/wikis/$wikiId/pages/$pageId/comments") {
+                page?.let { parameter("page", it) }
+                size?.let { parameter("size", it) }
+            }
+        }
+    }
+
     override suspend fun createPost(
             projectId: String,
             request: CreatePostRequest

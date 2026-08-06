@@ -20,6 +20,15 @@ data class PostCommentsResponseData(
         val pageSize: Int
 )
 
+/** 위키 댓글 목록 조회 응답 데이터 */
+@Serializable
+data class WikiCommentsResponseData(
+        val comments: List<WikiComment>,
+        val totalCount: Int,
+        val currentPage: Int,
+        val pageSize: Int
+)
+
 /** MCP Tool 에러 응답 */
 @Serializable
 data class ToolErrorResponse(

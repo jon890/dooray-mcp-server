@@ -592,6 +592,156 @@ class McpToolsUnitTest {
     }
 
     @Test
+    @DisplayName("위키 댓글 목록 조회 도구 - 성공 케이스")
+    fun testGetWikiPageCommentsHandlerSuccess() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockComments =
+            listOf(
+                WikiComment(
+                    id = "3950295078642684620",
+                    page = WikiCommentPage(id = "3521165468947041024"),
+                    createdAt = "2024-12-03T17:51:10+09:00",
+                    modifiedAt = "2024-12-03T17:51:10+09:00",
+                    creator =
+                        Creator(
+                            type = "member",
+                            member = Member(organizationMemberId = "3521165460461543659", name = "두레이")
+                        ),
+                    body = WikiCommentBody(mimeType = "text/x-markdown", content = "hello")
+                )
+            )
+        val mockResponse =
+            WikiCommentListResponse(
+                header =
+                    DoorayApiHeader(
+                        isSuccessful = true,
+                        resultCode = 0,
+                        resultMessage = "success"
+                    ),
+                result = mockComments,
+                totalCount = 27
+            )
+
+        coEvery { mockDoorayClient.getWikiPageComments(any(), any(), any(), any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "wiki1")
+                    put("page_id", "page1")
+                    put("page", 0)
+                    put("size", 10)
+                }
+
+        // when
+        val handler = getWikiPageCommentsHandler(mockDoorayClient)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text
+        assertContains(responseText, "\"success\": true")
+        assertContains(responseText, "\"comments\":")
+        assertContains(responseText, "\"totalCount\": 27")
+        assertContains(responseText, "\"currentPage\": 0")
+        assertContains(responseText, "\"pageSize\": 10")
+        assertContains(responseText, "hello")
+    }
+
+    @Test
+    @DisplayName("위키 댓글 목록 조회 도구 - project_id 누락 에러")
+    fun testGetWikiPageCommentsHandlerMissingProjectId() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("page_id", "page1")
+                    // project_id 누락
+                }
+
+        // when
+        val handler = getWikiPageCommentsHandler(mockDoorayClient)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "MISSING_PROJECT_ID")
+    }
+
+    @Test
+    @DisplayName("위키 댓글 목록 조회 도구 - page_id 누락 에러")
+    fun testGetWikiPageCommentsHandlerMissingPageId() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "wiki1")
+                    // page_id 누락
+                }
+
+        // when
+        val handler = getWikiPageCommentsHandler(mockDoorayClient)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "MISSING_PAGE_ID")
+    }
+
+    @Test
+    @DisplayName("위키 댓글 목록 조회 도구 - API 에러 케이스")
+    fun testGetWikiPageCommentsHandlerApiError() = runTest {
+        // given
+        val mockDoorayClient = mockk<DoorayClient>()
+
+        val mockResponse =
+            WikiCommentListResponse(
+                header =
+                    DoorayApiHeader(
+                        isSuccessful = false,
+                        resultCode = 404,
+                        resultMessage = "Page not found"
+                    ),
+                result = emptyList(),
+                totalCount = 0
+            )
+
+        coEvery { mockDoorayClient.getWikiPageComments(any(), any(), any(), any()) } returns mockResponse
+
+        val mockRequest = mockk<CallToolRequest>()
+        every { mockRequest.arguments } returns
+                buildJsonObject {
+                    put("project_id", "wiki1")
+                    put("page_id", "invalid_page_id")
+                }
+
+        // when
+        val handler = getWikiPageCommentsHandler(mockDoorayClient)
+        val result = handler(mockk<ClientConnection>(), mockRequest)
+
+        // then
+        assertTrue(result.content.isNotEmpty())
+        val content = result.content.first() as TextContent
+        val responseText = content.text
+        assertContains(responseText, "\"isError\": true")
+        assertContains(responseText, "Page not found")
+        assertContains(responseText, "DOORAY_API_404")
+    }
+
+    @Test
     @DisplayName("업무 댓글 생성 도구 - 성공 케이스")
     fun testCreatePostCommentHandlerSuccess() = runTest {
         // given
