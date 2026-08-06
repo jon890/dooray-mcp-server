@@ -22,8 +22,16 @@ class ProjectResolver(private val doorayClient: DoorayClient) {
     private val ttl: Duration = Duration.ofMinutes(
         Env.getLong(DOORAY_PROJECT_CACHE_TTL_MINUTES, default = 5L)
     )
+    private val rawProjectIdPattern = Regex("^[0-9]{15,}$")
 
     suspend fun resolveProjectId(input: String): String {
+        // Dooray ID는 15자리 이상의 ASCII 숫자다. 프로젝트 목록에 없는 ID도
+        // 특정 업무에는 접근할 수 있으므로 목록 조회 없이 원격 API에 권한 판정을 맡긴다.
+        if (rawProjectIdPattern.matches(input)) {
+            log.debug("ProjectResolver: treating '{}' as a raw project ID", input)
+            return input
+        }
+
         // If it looks like a numeric ID and is in cache, return it directly
         if (cacheById.containsKey(input)) {
             return input

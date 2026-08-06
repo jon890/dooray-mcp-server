@@ -122,6 +122,32 @@ class ProjectResolverTest {
     }
 
     @Test
+    @DisplayName("접근 권한 없는 프로젝트의 숫자 ID는 목록 조회 없이 그대로 통과시킨다")
+    fun testUnknownNumericIdPassesThrough() = runTest {
+        // when: a Dooray ID outside the accessible-projects list is resolved repeatedly
+        val first = projectResolver.resolveProjectId("5555555555555555555")
+        val second = projectResolver.resolveProjectId("5555555555555555555")
+
+        // then: it passes through and the downstream API enforces authorization
+        assertEquals("5555555555555555555", first)
+        assertEquals(first, second)
+        coVerify(exactly = 0) { mockDoorayClient.getProjects(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    @DisplayName("ASCII가 아닌 숫자는 원시 프로젝트 ID로 처리하지 않는다")
+    fun testNonAsciiDigitsAreRejectedAsRawId() = runTest {
+        coEvery { mockDoorayClient.getProjects(page = 0, size = 100, any(), any(), any()) } returns
+            ProjectListResponse(header = successHeader, result = projects, totalCount = projects.size)
+
+        val ex = assertFailsWith<ToolException> {
+            projectResolver.resolveProjectId("１１１１１１１１１１１１１１１")
+        }
+
+        assertEquals("PROJECT_NOT_FOUND", ex.code)
+    }
+
+    @Test
     @DisplayName("두 번째 호출에서는 캐시를 사용한다 (API 1회만 호출)")
     fun testCacheIsUsedOnSecondCall() = runTest {
         // given
