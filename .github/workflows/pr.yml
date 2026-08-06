@@ -3,6 +3,12 @@ name: PR Pipeline
 on:
   pull_request:
     branches: [master, main]
+  push:
+    branches-ignore: [master, main]
+
+concurrency:
+  group: pr-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   build:
