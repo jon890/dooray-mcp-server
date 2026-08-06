@@ -1,0 +1,23 @@
+{
+  "name": "plan002-mcp-sdk-security-upgrade",
+  "description": "MCP SDK와 GitHub Actions 워크플로우를 보안 기준에 맞춰 갱신한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {
+      "number": 1,
+      "file": "phase-01.md",
+      "title": "SDK 업그레이드와 워크플로우 갱신",
+      "execution_profile": "deep",
+      "status": "pending"
+    },
+    {
+      "number": 2,
+      "file": "phase-02.md",
+      "title": "빌드·CI 검증과 완료 마킹",
+      "execution_profile": "fast",
+      "status": "pending"
+    }
+  ]
+}

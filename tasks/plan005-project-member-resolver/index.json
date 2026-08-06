@@ -1,0 +1,23 @@
+{
+  "name": "plan005-project-member-resolver",
+  "description": "프로젝트, 멤버, 대상 해석기의 정확·부분·모호성 규칙을 정리한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {
+      "number": 1,
+      "file": "phase-01.md",
+      "title": "프로젝트·멤버 해석과 리졸버",
+      "execution_profile": "deep",
+      "status": "pending"
+    },
+    {
+      "number": 2,
+      "file": "phase-02.md",
+      "title": "정확·부분·모호성 검증",
+      "execution_profile": "fast",
+      "status": "pending"
+    }
+  ]
+}

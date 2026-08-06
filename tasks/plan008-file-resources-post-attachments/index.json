@@ -1,0 +1,11 @@
+{
+  "name": "plan008-file-resources-post-attachments",
+  "description": "MCP 리소스 중심 파일 전송과 업무·댓글 첨부 기능을 구현한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {"number": 1, "file": "phase-01.md", "title": "파일 경계와 업무 첨부 구현", "execution_profile": "deep", "status": "pending"},
+    {"number": 2, "file": "phase-02.md", "title": "파일 계약 검증과 완료", "execution_profile": "fast", "status": "pending"}
+  ]
+}

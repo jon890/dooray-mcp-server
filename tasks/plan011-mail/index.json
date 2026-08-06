@@ -1,0 +1,11 @@
+{
+  "name": "plan011-mail",
+  "description": "IMAPS 조회와 SMTPS 전송·답장을 독립 구현하고 오류를 분류한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {"number": 1, "file": "phase-01.md", "title": "메일 클라이언트와 도구 구현", "execution_profile": "deep", "status": "pending"},
+    {"number": 2, "file": "phase-02.md", "title": "메일 오류·보안 검증과 완료", "execution_profile": "fast", "status": "pending"}
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "plan003-execution-contract",
+  "description": "MCP 실행 계약과 구조화 오류·출력 경계를 분리한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {
+      "number": 1,
+      "file": "phase-01.md",
+      "title": "공통 실행 경계와 출력 계약",
+      "execution_profile": "deep",
+      "status": "pending"
+    },
+    {
+      "number": 2,
+      "file": "phase-02.md",
+      "title": "구조화 결과와 검증 마감",
+      "execution_profile": "fast",
+      "status": "pending"
+    }
+  ]
+}

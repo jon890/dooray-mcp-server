@@ -1,0 +1,11 @@
+{
+  "name": "plan015-docker-release",
+  "description": "문서·Docker 다중 아키텍처·시험 태그·안정 릴리스를 검증한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {"number": 1, "file": "phase-01.md", "title": "배포 하네스와 시험 이미지", "execution_profile": "standard", "status": "pending"},
+    {"number": 2, "file": "phase-02.md", "title": "릴리스 검증과 완료", "execution_profile": "deep", "status": "pending"}
+  ]
+}
