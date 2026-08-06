@@ -42,6 +42,7 @@ class McpServerIntegrationTest {
             "dooray_wiki_get_page",
             "dooray_wiki_create_page",
             "dooray_wiki_update_page",
+            "dooray_wiki_get_page_comments",
             "dooray_project_list_projects",
             "dooray_project_list_members",
             "dooray_project_list_workflows",
@@ -60,7 +61,15 @@ class McpServerIntegrationTest {
 
         /** project_id를 required로 가져야 하는 도구 목록 */
         private val TOOLS_REQUIRING_PROJECT_ID = EXPECTED_TOOLS
-            .filter { it.startsWith("dooray_project_") && it != "dooray_project_list_projects" }
+            .filter {
+                (it.startsWith("dooray_project_") && it != "dooray_project_list_projects") ||
+                    it == "dooray_wiki_get_page_comments"
+            }
+
+        /** page_id를 required로 가져야 하는 도구 목록 */
+        private val TOOLS_REQUIRING_PAGE_ID = listOf(
+            "dooray_wiki_get_page_comments",
+        )
 
         /** post_id를 required로 가져야 하는 도구 목록 */
         private val TOOLS_REQUIRING_POST_ID = listOf(
@@ -108,6 +117,10 @@ class McpServerIntegrationTest {
     @DisplayName("모든 필수 도구가 등록되어야 한다")
     fun `all expected tools should be registered`(): Unit = runBlocking {
         val toolNames = client.listTools().tools.map { it.name }
+        assertTrue(
+            toolNames.toSet() == EXPECTED_TOOLS.toSet(),
+            "등록된 도구 목록이 스냅숏과 다릅니다. expected=$EXPECTED_TOOLS, actual=$toolNames"
+        )
         EXPECTED_TOOLS.forEach { expected ->
             assertContains(toolNames, expected, "도구 '$expected'가 등록되지 않았습니다")
         }
@@ -153,6 +166,17 @@ class McpServerIntegrationTest {
             val tool = toolMap[toolName] ?: error("도구 '$toolName'이 등록되지 않았습니다")
             val required = tool.inputSchema.required ?: emptyList()
             assertContains(required, "post_id", "도구 '$toolName'의 required에 post_id가 없습니다")
+        }
+    }
+
+    @Test
+    @DisplayName("page_id가 필요한 도구는 required에 page_id가 선언되어야 한다")
+    fun `tools requiring page_id should declare it as required`(): Unit = runBlocking {
+        val toolMap = client.listTools().tools.associateBy { it.name }
+        TOOLS_REQUIRING_PAGE_ID.forEach { toolName ->
+            val tool = toolMap[toolName] ?: error("도구 '$toolName'이 등록되지 않았습니다")
+            val required = tool.inputSchema.required ?: emptyList()
+            assertContains(required, "page_id", "도구 '$toolName'의 required에 page_id가 없습니다")
         }
     }
 
