@@ -11,7 +11,6 @@ import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Tag
 import kotlin.test.assertContains
 import kotlin.test.assertFalse
@@ -88,7 +87,7 @@ class McpServerIntegrationTest {
     @BeforeAll
     fun setup(): Unit = runBlocking {
         val jarPath = "build/libs/dooray-mcp-server-${VersionConst.VERSION}-all.jar"
-        assumeTrue(
+        assertTrue(
             java.io.File(jarPath).exists(),
             "shadowJar not found at $jarPath — run ./gradlew shadowJar first"
         )

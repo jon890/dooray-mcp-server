@@ -1,5 +1,6 @@
 package com.bifos.dooray.mcp
 
+import com.bifos.dooray.mcp.constants.VersionConst
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.Test
@@ -24,6 +25,7 @@ class DockerfileContractTest {
                 ?.trim()
 
         assertEquals(projectVersion, dockerVersion)
+        assertEquals(projectVersion, VersionConst.VERSION)
     }
 
     @Test

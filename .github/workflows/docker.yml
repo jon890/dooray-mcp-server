@@ -68,13 +68,18 @@ jobs:
       - name: Extract version
         id: version
         run: |
+          PROJECT_VERSION=$(grep 'project.version=' gradle.properties | cut -d'=' -f2)
           if [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
           elif [ "${{ github.event_name }}" = "release" ]; then
             VERSION="${{ github.event.release.tag_name }}"
             VERSION="${VERSION#v}"
           else
-            VERSION=$(grep 'project.version=' gradle.properties | cut -d'=' -f2)
+            VERSION="${PROJECT_VERSION}"
+          fi
+          if { [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event.inputs.push }}" = "true" ]; } && [ "${VERSION}" != "${PROJECT_VERSION}" ]; then
+            echo "게시 버전 ${VERSION}이 project.version ${PROJECT_VERSION}과 일치하지 않습니다." >&2
+            exit 1
           fi
           echo "VERSION=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "Build version: ${VERSION}"
