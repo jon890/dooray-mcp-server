@@ -5,6 +5,10 @@ on:
     branches: [master, main]
     tags: ["v*"]
 
+concurrency:
+  group: main-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: docker.io
   IMAGE_NAME: bifos/dooray-mcp
@@ -101,8 +105,15 @@ jobs:
 
       - name: Extract version from gradle.properties
         id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           VERSION=$(grep 'project.version=' gradle.properties | cut -d'=' -f2)
+          TAG_VERSION="${RELEASE_TAG#v}"
+          if [ "${TAG_VERSION}" != "${VERSION}" ]; then
+            echo "Git 태그 버전 ${TAG_VERSION}이 project.version ${VERSION}과 일치하지 않습니다." >&2
+            exit 1
+          fi
           echo "VERSION=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "Extracted version: ${VERSION}"
 

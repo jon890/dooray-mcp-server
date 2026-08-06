@@ -67,17 +67,22 @@ jobs:
 
       - name: Extract version
         id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          SHOULD_PUSH: ${{ github.event_name == 'release' || github.event.inputs.push == 'true' }}
         run: |
           PROJECT_VERSION=$(grep 'project.version=' gradle.properties | cut -d'=' -f2)
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          elif [ "${{ github.event_name }}" = "release" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
+          if [ -n "${INPUT_VERSION}" ]; then
+            VERSION="${INPUT_VERSION}"
+          elif [ "${EVENT_NAME}" = "release" ]; then
+            VERSION="${RELEASE_TAG}"
             VERSION="${VERSION#v}"
           else
             VERSION="${PROJECT_VERSION}"
           fi
-          if { [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event.inputs.push }}" = "true" ]; } && [ "${VERSION}" != "${PROJECT_VERSION}" ]; then
+          if [ "${SHOULD_PUSH}" = "true" ] && [ "${VERSION}" != "${PROJECT_VERSION}" ]; then
             echo "게시 버전 ${VERSION}이 project.version ${PROJECT_VERSION}과 일치하지 않습니다." >&2
             exit 1
           fi
