@@ -1,29 +1,33 @@
-Run MCP server integration tests that verify the server works correctly via MCP protocol.
+# MCP 연결 검사
 
-## Steps
+가짜 자격 증명과 STDIO 전송을 사용해 빌드된 서버의 MCP 계약을 검증한다.
 
-1. Build the shadowJar if it doesn't exist for the current version:
-   ```
-   ./gradlew shadowJar -q
-   ```
+## 절차
 
-2. Run the MCP server integration tests:
-   ```
-   ./gradlew test --tests "com.bifos.dooray.mcp.McpServerIntegrationTest"
+1. 현재 버전의 실행 JAR을 빌드한다.
+
+   ```bash
+   ./gradlew shadowJar --no-daemon --console=plain
    ```
 
-3. Report results:
-   - How many tests passed/failed
-   - List any failures with details
-   - Confirm all 16 tools are registered
+2. 전용 연결 검사를 실행한다.
 
-## What these tests verify
-- Server starts successfully with fake credentials
-- All 16 MCP tools are registered (`dooray_wiki_*` × 5, `dooray_project_*` × 11)
-- Each tool has a description and inputSchema
-- MCP protocol handshake works correctly
+   ```bash
+   ./gradlew testMcpIntegration --no-daemon --console=plain
+   ```
 
-## Notes
-- Uses fake credentials (`DOORAY_BASE_URL=https://fake.dooray.test`, `DOORAY_API_KEY=fake-key`)
-- No real Dooray API calls are made
-- Tests are skipped automatically if shadowJar is not found
+3. 다음 항목을 확인한다.
+
+   - MCP 초기 연결과 종료
+   - 선택한 도구 프로필의 정확한 도구 목록
+   - 모든 도구의 설명과 입력 스키마
+   - 필수 파라미터 선언
+   - 구조화된 오류 응답
+
+4. 통과한 검사 수와 실패 내용을 보고한다.
+
+## 안전 경계
+
+- `DOORAY_BASE_URL`과 `DOORAY_API_KEY`에는 테스트 전용 가짜 값을 사용한다.
+- 서버가 실제 Dooray API를 호출하지 않는 입력만 보낸다.
+- 실행 JAR이 없어서 검사가 건너뛰어지면 성공으로 간주하지 않는다.

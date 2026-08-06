@@ -1,6 +1,22 @@
-Clean build and run unit tests (CI mode, integration tests excluded).
+# 빌드와 기본 검증
 
-Steps:
-1. Run `CI=true ./gradlew clean build` and report results
-2. If tests fail (beyond expected integration test failures), investigate and report the errors
-3. Report final build status and test counts
+실제 Dooray API를 호출하지 않고 저장소의 기본 품질 검사를 실행한다.
+
+## 절차
+
+1. 작업 트리 상태를 확인한다.
+2. 다음 명령으로 깨끗한 빌드와 단위 테스트를 실행한다.
+
+   ```bash
+   CI=true ./gradlew clean build --no-daemon --console=plain
+   ```
+
+3. `git diff --check`로 공백 오류를 검사한다.
+4. 실패하면 최초 원인과 관련 파일을 찾아 수정하고 같은 명령을 다시 실행한다.
+5. 통과한 테스트 수, 제외된 검사, 남은 경고를 보고한다.
+
+## 안전 경계
+
+- 실제 Dooray 자격 증명을 사용하지 않는다.
+- 실제 삭제 API나 외부 사용자에게 영향을 주는 호출을 실행하지 않는다.
+- 실패를 통합 테스트 탓으로 추정하지 말고 실제 출력으로 분류한다.
