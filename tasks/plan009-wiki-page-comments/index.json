@@ -1,0 +1,11 @@
+{
+  "name": "plan009-wiki-page-comments",
+  "description": "위키 탐색, 고속 트리, 페이지와 댓글 생명주기를 구현한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {"number": 1, "file": "phase-01.md", "title": "위키 트리와 페이지·댓글 구현", "execution_profile": "deep", "status": "pending"},
+    {"number": 2, "file": "phase-02.md", "title": "이슈 2 성능과 계약 검증", "execution_profile": "fast", "status": "pending"}
+  ]
+}

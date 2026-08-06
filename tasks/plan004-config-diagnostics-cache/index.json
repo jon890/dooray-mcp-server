@@ -1,0 +1,23 @@
+{
+  "name": "plan004-config-diagnostics-cache",
+  "description": "설정, 진단, 캐시의 시작·상태·보존 규칙을 정리한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {
+      "number": 1,
+      "file": "phase-01.md",
+      "title": "설정 로더와 진단·캐시 경계",
+      "execution_profile": "standard",
+      "status": "pending"
+    },
+    {
+      "number": 2,
+      "file": "phase-02.md",
+      "title": "관리 도구 계약과 검증 마감",
+      "execution_profile": "fast",
+      "status": "pending"
+    }
+  ]
+}

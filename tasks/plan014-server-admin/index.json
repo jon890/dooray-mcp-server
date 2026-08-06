@@ -1,0 +1,11 @@
+{
+  "name": "plan014-server-admin",
+  "description": "설정·진단·설치 안내·피드백의 MCP 고유 동등 기능을 완성한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {"number": 1, "file": "phase-01.md", "title": "서버 관리 도구와 리소스 구현", "execution_profile": "standard", "status": "pending"},
+    {"number": 2, "file": "phase-02.md", "title": "동등 결과 검증과 완료", "execution_profile": "fast", "status": "pending"}
+  ]
+}

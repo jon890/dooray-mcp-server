@@ -1,0 +1,11 @@
+{
+  "name": "plan012-messenger",
+  "description": "사용자와 채널 대상 메신저 전송을 구조화된 결과로 구현한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {"number": 1, "file": "phase-01.md", "title": "메신저 대상 해석과 전송 구현", "execution_profile": "standard", "status": "pending"},
+    {"number": 2, "file": "phase-02.md", "title": "전송 결과와 오류 검증", "execution_profile": "fast", "status": "pending"}
+  ]
+}

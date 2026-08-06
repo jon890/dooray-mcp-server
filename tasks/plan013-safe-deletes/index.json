@@ -1,0 +1,11 @@
+{
+  "name": "plan013-safe-deletes",
+  "description": "모든 손실 작업을 5분 준비·확정 토큰 계약으로 통일한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {"number": 1, "file": "phase-01.md", "title": "확인 저장소와 삭제 연결", "execution_profile": "deep", "status": "pending"},
+    {"number": 2, "file": "phase-02.md", "title": "삭제 안전 적대 검증", "execution_profile": "deep", "status": "pending"}
+  ]
+}

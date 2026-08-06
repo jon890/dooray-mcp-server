@@ -1,0 +1,23 @@
+{
+  "name": "plan001-project-harness",
+  "description": "현재 브랜치의 한국어 하네스 문서와 실행 규칙을 정리해 이후 계획의 기준선을 만든다.",
+  "status": "completed",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {
+      "number": 1,
+      "file": "phase-01.md",
+      "title": "한국어 하네스와 문서 골격 정리",
+      "execution_profile": "standard",
+      "status": "completed"
+    },
+    {
+      "number": 2,
+      "file": "phase-02.md",
+      "title": "문서 검증과 완료 마킹",
+      "execution_profile": "fast",
+      "status": "completed"
+    }
+  ]
+}

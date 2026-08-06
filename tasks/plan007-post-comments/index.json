@@ -1,0 +1,23 @@
+{
+  "name": "plan007-post-comments",
+  "description": "업무 댓글 조회·작성·수정·삭제 계약을 정리한다.",
+  "status": "pending",
+  "created_at": "2026-08-06",
+  "total_phases": 2,
+  "phases": [
+    {
+      "number": 1,
+      "file": "phase-01.md",
+      "title": "댓글 조회와 작성 경계",
+      "execution_profile": "standard",
+      "status": "pending"
+    },
+    {
+      "number": 2,
+      "file": "phase-02.md",
+      "title": "댓글 수정·삭제 검증",
+      "execution_profile": "fast",
+      "status": "pending"
+    }
+  ]
+}
