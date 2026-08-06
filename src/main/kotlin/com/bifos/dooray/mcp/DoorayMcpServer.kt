@@ -7,7 +7,6 @@ import com.bifos.dooray.mcp.constants.VersionConst
 import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.tools.*
 import com.bifos.dooray.mcp.utils.Env
-import io.ktor.utils.io.streams.*
 import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
@@ -15,15 +14,15 @@ import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
 import io.modelcontextprotocol.kotlin.sdk.types.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
-import kotlinx.io.asSink
-import kotlinx.io.buffered
+import kotlinx.io.Sink
+import kotlinx.io.Source
 import org.slf4j.LoggerFactory
 
 class DoorayMcpServer {
 
     private val log = LoggerFactory.getLogger(DoorayMcpServer::class.java)
 
-    fun initServer() {
+    fun initServer(input: Source, output: Sink) {
         log.info("Dooray MCP Server starting...")
 
         val doorayHttpClient =
@@ -44,7 +43,7 @@ class DoorayMcpServer {
                         ServerCapabilities(
                             tools =
                                 ServerCapabilities.Tools(
-                                    listChanged = true
+                                    listChanged = false
                                 )
                         )
                 )
@@ -53,7 +52,7 @@ class DoorayMcpServer {
         registerTool(server, doorayHttpClient)
 
         val transport =
-            StdioServerTransport(System.`in`.asInput(), System.out.asSink().buffered())
+            StdioServerTransport(input = input, output = output)
 
         log.info("Starting MCP server on STDIO transport...")
 

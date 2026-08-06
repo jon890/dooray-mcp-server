@@ -127,6 +127,15 @@ class McpServerIntegrationTest {
     }
 
     @Test
+    @DisplayName("정적 도구 목록은 변경 알림을 지원하지 않아야 한다")
+    fun `static tool list should not advertise list changed notifications`(): Unit = runBlocking {
+        assertFalse(
+            client.serverCapabilities?.tools?.listChanged ?: true,
+            "정적 도구 목록인데 tools.listChanged가 true입니다"
+        )
+    }
+
+    @Test
     @DisplayName("각 도구에 description이 있어야 한다")
     fun `each tool should have a non-blank description`(): Unit = runBlocking {
         val tools = client.listTools().tools

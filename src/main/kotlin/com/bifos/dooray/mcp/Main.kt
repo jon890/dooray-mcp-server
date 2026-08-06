@@ -1,6 +1,9 @@
 package com.bifos.dooray.mcp
 
 import com.bifos.dooray.mcp.constants.VersionConst
+import kotlinx.io.asSink
+import kotlinx.io.asSource
+import kotlinx.io.buffered
 import org.slf4j.LoggerFactory
 
 fun main() {
@@ -10,7 +13,10 @@ fun main() {
     val logger = LoggerFactory.getLogger("com.bifos.dooray.mcp.Main")
     logger.info("🚀 Dooray MCP Server v${VersionConst.VERSION} starting...")
 
-    DoorayMcpServer().initServer()
+    DoorayMcpServer().initServer(
+        input = System.`in`.asSource().buffered(),
+        output = System.out.asSink().buffered()
+    )
 }
 
 /** 시스템 로깅 설정을 구성하여 stdout 오염을 방지합니다. */
