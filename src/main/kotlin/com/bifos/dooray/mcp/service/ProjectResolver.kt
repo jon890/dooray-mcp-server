@@ -22,8 +22,16 @@ class ProjectResolver(private val doorayClient: DoorayClient) {
     private val ttl: Duration = Duration.ofMinutes(
         Env.getLong(DOORAY_PROJECT_CACHE_TTL_MINUTES, default = 5L)
     )
+    private val rawProjectIdPattern = Regex("^[0-9]{15,}$")
 
     suspend fun resolveProjectId(input: String): String {
+        // Dooray ID는 15자리 이상의 ASCII 숫자다. 프로젝트 목록에 없는 ID도
+        // 특정 업무에는 접근할 수 있으므로 목록 조회 없이 원격 API에 권한 판정을 맡긴다.
+        if (rawProjectIdPattern.matches(input)) {
+            log.debug("ProjectResolver: treating '{}' as a raw project ID", input)
+            return input
+        }
+
         // If it looks like a numeric ID and is in cache, return it directly
         if (cacheById.containsKey(input)) {
             return input
@@ -59,15 +67,6 @@ class ProjectResolver(private val doorayClient: DoorayClient) {
         if (resolved != null) {
             log.debug("ProjectResolver: resolved code '{}' -> id '{}' (after refresh)", input, resolved.id)
             return resolved.id
-        }
-
-        // Not found in the accessible-projects list. If the input is a numeric project ID,
-        // pass it through as-is: the user may have access to a post inside a project they are
-        // not a member of (so it never appears in getProjects), and the downstream Dooray API
-        // will enforce authorization. Only non-numeric codes/names that can't be resolved error.
-        if (input.isNotEmpty() && input.all { it.isDigit() }) {
-            log.debug("ProjectResolver: '{}' not in accessible projects; treating as raw project ID", input)
-            return input
         }
 
         // Not found — throw with helpful message listing available codes

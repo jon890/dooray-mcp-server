@@ -122,17 +122,29 @@ class ProjectResolverTest {
     }
 
     @Test
-    @DisplayName("접근 권한 없는 프로젝트의 숫자 ID는 refresh 후에도 그대로 통과시킨다 (Post 접근 케이스)")
+    @DisplayName("접근 권한 없는 프로젝트의 숫자 ID는 목록 조회 없이 그대로 통과시킨다")
     fun testUnknownNumericIdPassesThrough() = runTest {
-        // given: getProjects only returns projects the user is a member of (no "5555555555")
+        // when: a Dooray ID outside the accessible-projects list is resolved repeatedly
+        val first = projectResolver.resolveProjectId("5555555555555555555")
+        val second = projectResolver.resolveProjectId("5555555555555555555")
+
+        // then: it passes through and the downstream API enforces authorization
+        assertEquals("5555555555555555555", first)
+        assertEquals(first, second)
+        coVerify(exactly = 0) { mockDoorayClient.getProjects(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    @DisplayName("ASCII가 아닌 숫자는 원시 프로젝트 ID로 처리하지 않는다")
+    fun testNonAsciiDigitsAreRejectedAsRawId() = runTest {
         coEvery { mockDoorayClient.getProjects(page = 0, size = 100, any(), any(), any()) } returns
             ProjectListResponse(header = successHeader, result = projects, totalCount = projects.size)
 
-        // when: a numeric ID outside the accessible-projects list (user has post access only)
-        val result = projectResolver.resolveProjectId("5555555555")
+        val ex = assertFailsWith<ToolException> {
+            projectResolver.resolveProjectId("１１１１１１１１１１１１１１１")
+        }
 
-        // then: passed through as-is; downstream API enforces authorization
-        assertEquals("5555555555", result)
+        assertEquals("PROJECT_NOT_FOUND", ex.code)
     }
 
     @Test
