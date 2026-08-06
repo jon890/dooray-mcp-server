@@ -25,7 +25,7 @@ RUN ./gradlew clean shadowJar --no-daemon
 FROM eclipse-temurin:21-jre-alpine
 
 # 버전을 빌드 인수로 받기
-ARG VERSION=0.2.1
+ARG VERSION=0.4.1
 ENV APP_VERSION=${VERSION}
 
 # 메타데이터 라벨
@@ -40,8 +40,9 @@ RUN addgroup -g 1000 dooray && \
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# 빌드된 JAR 파일 복사 (버전 변수 사용)
-COPY --from=builder /app/build/libs/dooray-mcp-server-${VERSION}-all.jar app.jar
+# 이미지 태그용 VERSION과 Gradle 프로젝트 버전이 달라도 빌드 산출물을 안전하게 복사한다.
+# shadowJar는 단일 *-all.jar를 만들며, 여러 파일이 생기면 COPY가 실패해 모호성을 숨기지 않는다.
+COPY --from=builder /app/build/libs/*-all.jar app.jar
 
 # 파일 소유권 변경
 RUN chown -R dooray:dooray /app
@@ -63,4 +64,4 @@ EXPOSE 8080
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
 
 # 기본 명령어
-CMD [] 
+CMD []
