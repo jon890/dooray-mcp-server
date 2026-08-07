@@ -59,6 +59,9 @@ CLI 하위 프로세스나 Node.js 런타임은 사용하지 않는다.
 
 생성, 수정, 업로드, 발송처럼 외부 상태를 바꾸는 도구는 `request_id`를 받는다.
 
+compact 변경 도구는 호출자가 만든 UUID 형식의 `request_id`를 필수로 검증한다.
+조회와 legacy 호환 호출에 값이 없으면 서버가 결과 추적용 요청 ID를 생성한다.
+
 - 같은 `request_id`와 같은 정규화 입력은 진행 중 요청에 합류하거나 저장된 결과를 재사용한다.
 - 같은 `request_id`와 다른 입력은 `IDEMPOTENCY_KEY_REUSED`로 거부한다.
 - 응답 유실로 외부 효과가 불명확하면 `OUTCOME_UNKNOWN`을 반환한다.
