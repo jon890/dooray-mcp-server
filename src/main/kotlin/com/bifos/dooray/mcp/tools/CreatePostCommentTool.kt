@@ -4,6 +4,7 @@ import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.service.ProjectResolver
 import com.bifos.dooray.mcp.types.CreateCommentRequest
 import com.bifos.dooray.mcp.types.PostCommentBody
+import com.bifos.dooray.mcp.types.ToolEffect
 import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
@@ -46,7 +47,7 @@ fun createPostCommentHandler(
     projectResolver: ProjectResolver
 ): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
     return { _, request ->
-        toolHandler {
+        toolHandler(ToolEffect.WRITE) {
             val projectId = projectResolver.resolveProjectId(
                 request.requireParam("project_id", "MISSING_PROJECT_ID", "project_id 파라미터가 필요합니다.")
             )

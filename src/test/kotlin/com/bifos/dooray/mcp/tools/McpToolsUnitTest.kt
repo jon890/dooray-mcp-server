@@ -15,6 +15,7 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -71,6 +72,8 @@ class McpToolsUnitTest {
         val responseText = content.text
         assertContains(responseText, "\"success\": true")
         assertContains(responseText, "테스트 위키")
+        assertTrue(result.isError == false)
+        assertTrue(result.structuredContent?.get("ok")?.jsonPrimitive?.content == "true")
     }
 
     @Test

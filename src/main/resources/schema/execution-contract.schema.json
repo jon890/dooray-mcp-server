@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jon890/dooray-mcp-server/schema/execution-contract.schema.json",
+  "title": "Dooray MCP 공통 실행 계약",
+  "$defs": {
+    "resultMode": {
+      "type": "string",
+      "enum": ["ids", "compact", "full"],
+      "default": "compact"
+    },
+    "bodyInput": {
+      "type": "object",
+      "properties": {
+        "body": {"type": "string"},
+        "body_resource_uri": {"type": "string", "format": "uri"},
+        "body_local_path": {"type": "string"}
+      },
+      "oneOf": [
+        {"required": ["body"]},
+        {"required": ["body_resource_uri"]},
+        {"required": ["body_local_path"]}
+      ],
+      "unevaluatedProperties": false
+    },
+    "resultId": {
+      "type": "object",
+      "properties": {
+        "kind": {"type": "string"},
+        "id": {"type": "string"}
+      },
+      "required": ["kind", "id"],
+      "unevaluatedProperties": false
+    },
+    "success": {
+      "type": "object",
+      "properties": {
+        "ok": {"const": true},
+        "operation": {"type": "string"},
+        "ids": {"type": "array", "items": {"$ref": "#/$defs/resultId"}},
+        "data": {"type": "object"},
+        "meta": {
+          "type": "object",
+          "properties": {
+            "resultMode": {"$ref": "#/$defs/resultMode"},
+            "dryRun": {"type": "boolean"},
+            "requestId": {"type": "string"},
+            "warnings": {"type": "array", "items": {"type": "string"}}
+          },
+          "required": ["resultMode", "dryRun", "requestId", "warnings"]
+        }
+      },
+      "required": ["ok", "operation", "ids", "meta"]
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "ok": {"const": false},
+        "operation": {"type": "string"},
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {"type": "string"},
+            "message": {"type": "string"},
+            "retryable": {"type": "boolean"},
+            "retry_after_ms": {"type": "integer", "minimum": 0},
+            "details": {"type": "object"}
+          },
+          "required": ["code", "message", "retryable", "details"]
+        },
+        "meta": {
+          "type": "object",
+          "properties": {
+            "requestId": {"type": "string"},
+            "correlationId": {"type": "string"}
+          },
+          "required": ["requestId", "correlationId"]
+        }
+      },
+      "required": ["ok", "operation", "error", "meta"]
+    }
+  }
+}

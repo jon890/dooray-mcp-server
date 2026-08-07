@@ -3,11 +3,12 @@ package com.bifos.dooray.mcp
 import com.bifos.dooray.mcp.client.DoorayHttpClient
 import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_API_KEY
 import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_BASE_URL
+import com.bifos.dooray.mcp.constants.EnvVariableConst.DOORAY_MCP_TOOL_PROFILE
 import com.bifos.dooray.mcp.constants.VersionConst
-import com.bifos.dooray.mcp.service.ProjectResolver
-import com.bifos.dooray.mcp.tools.*
+import com.bifos.dooray.mcp.tooling.LegacyToolModule
+import com.bifos.dooray.mcp.tooling.ToolProfile
+import com.bifos.dooray.mcp.tooling.ToolRegistry
 import com.bifos.dooray.mcp.utils.Env
-import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
@@ -49,7 +50,12 @@ class DoorayMcpServer {
                 )
             )
 
-        registerTool(server, doorayHttpClient)
+        val profile = ToolProfile.parse(Env.get(DOORAY_MCP_TOOL_PROFILE))
+        val toolCount = ToolRegistry(
+            profile = profile,
+            modules = listOf(LegacyToolModule(doorayHttpClient)),
+        ).register(server)
+        log.info("Successfully added {} tools for profile {}", toolCount, profile.wireName)
 
         val transport =
             StdioServerTransport(input = input, output = output)
@@ -69,39 +75,4 @@ class DoorayMcpServer {
         }
     }
 
-    fun registerTool(server: Server, doorayHttpClient: DoorayHttpClient) {
-        log.info("Adding tools...")
-
-        val projectResolver = ProjectResolver(doorayHttpClient)
-
-        var toolCount = 0
-
-        fun addTool(tool: Tool, handler: suspend (ClientConnection, CallToolRequest) -> CallToolResult) {
-            server.addTool(tool, handler)
-            toolCount++
-        }
-
-        addTool(getWikisTool(), getWikisHandler(doorayHttpClient))
-        addTool(getWikiPagesTool(), getWikiPagesHandler(doorayHttpClient))
-        addTool(getWikiPageTool(), getWikiPageHandler(doorayHttpClient))
-        addTool(createWikiPageTool(), createWikiPageHandler(doorayHttpClient))
-        addTool(updateWikiPageTool(), updateWikiPageHandler(doorayHttpClient))
-        addTool(getWikiPageCommentsTool(), getWikiPageCommentsHandler(doorayHttpClient))
-        addTool(getProjectPostsTool(), getProjectPostsHandler(doorayHttpClient, projectResolver))
-        addTool(getProjectPostTool(), getProjectPostHandler(doorayHttpClient, projectResolver))
-        addTool(createProjectPostTool(), createProjectPostHandler(doorayHttpClient, projectResolver))
-        addTool(setProjectPostWorkflowTool(), setProjectPostWorkflowHandler(doorayHttpClient, projectResolver))
-        addTool(setProjectPostDoneTool(), setProjectPostDoneHandler(doorayHttpClient, projectResolver))
-        addTool(getProjectsTool(), getProjectsHandler(doorayHttpClient, projectResolver))
-        addTool(updateProjectPostTool(), updateProjectPostHandler(doorayHttpClient, projectResolver))
-        addTool(createPostCommentTool(), createPostCommentHandler(doorayHttpClient, projectResolver))
-        addTool(getPostCommentsTool(), getPostCommentsHandler(doorayHttpClient, projectResolver))
-        addTool(updatePostCommentTool(), updatePostCommentHandler(doorayHttpClient, projectResolver))
-        addTool(deletePostCommentTool(), deletePostCommentHandler(doorayHttpClient, projectResolver))
-        addTool(getProjectMembersTool(), getProjectMembersHandler(doorayHttpClient, projectResolver))
-        addTool(getProjectWorkflowsTool(), getProjectWorkflowsHandler(doorayHttpClient, projectResolver))
-        addTool(setProjectPostParentTool(), setProjectPostParentHandler(doorayHttpClient, projectResolver))
-
-        log.info("Successfully added $toolCount tools to MCP server")
-    }
 }

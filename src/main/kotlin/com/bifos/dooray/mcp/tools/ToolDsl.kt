@@ -1,45 +1,43 @@
 package com.bifos.dooray.mcp.tools
 
 import com.bifos.dooray.mcp.exception.ToolException
+import com.bifos.dooray.mcp.tooling.DefaultToolExecutionBoundary
 import com.bifos.dooray.mcp.types.DoorayApiHeader
 import com.bifos.dooray.mcp.types.ToolSuccessResponse
+import com.bifos.dooray.mcp.types.ToolEffect
 import com.bifos.dooray.mcp.utils.JsonUtils
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
-suspend fun toolHandler(block: suspend () -> CallToolResult): CallToolResult {
-    return try {
-        block()
-    } catch (e: ToolException) {
-        e.toCallToolResult()
-    } catch (e: Exception) {
-        ToolException(
-            type = ToolException.INTERNAL_ERROR,
-            message = "내부 오류가 발생했습니다: ${e.message}",
-            details = e.stackTraceToString()
-        ).toCallToolResult()
-    }
+suspend fun toolHandler(
+    effect: ToolEffect = ToolEffect.READ,
+    block: suspend () -> CallToolResult,
+): CallToolResult {
+    return DefaultToolExecutionBoundary.instance.executeLegacy(effect, block)
 }
 
 fun ToolException.toCallToolResult(): CallToolResult =
-    CallToolResult(content = listOf(TextContent(JsonUtils.toJsonString(toErrorResponse()))))
+    DefaultToolExecutionBoundary.instance.legacyErrorResult(this)
 
 inline fun <reified T : Any> successResult(data: T, message: String): CallToolResult =
-    CallToolResult(
-        content = listOf(TextContent(JsonUtils.toJsonString(
-            ToolSuccessResponse(data = JsonUtils.toJsonElement(data), message = message)
-        )))
-    )
+    ToolSuccessResponse(data = JsonUtils.toJsonElement(data), message = message).let { response ->
+        DefaultToolExecutionBoundary.instance.legacySuccessResult(
+            data = response.data,
+            compatibilityText = JsonUtils.toJsonString(response),
+        )
+    }
 
 fun successResult(message: String): CallToolResult =
-    CallToolResult(
-        content = listOf(TextContent(JsonUtils.toJsonString(ToolSuccessResponse(message = message))))
-    )
+    ToolSuccessResponse(message = message).let { response ->
+        DefaultToolExecutionBoundary.instance.legacySuccessResult(
+            data = null,
+            compatibilityText = JsonUtils.toJsonString(response),
+        )
+    }
 
 fun apiErrorResult(header: DoorayApiHeader): CallToolResult =
     ToolException(

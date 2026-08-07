@@ -237,6 +237,7 @@ docker build -t dooray-mcp:local --build-arg VERSION=0.4.1 .
 | `DOORAY_LOG_LEVEL`               | 일반 로깅 레벨 (기본값: WARN)      | 선택           |
 | `DOORAY_HTTP_LOG_LEVEL`          | HTTP 클라이언트 로깅 레벨 (기본값: WARN) | 선택      |
 | `DOORAY_PROJECT_CACHE_TTL_MINUTES` | 프로젝트 캐시 TTL (분, 기본값: 5) | 선택          |
+| `DOORAY_MCP_TOOL_PROFILE`        | 도구 노출 프로필 (`legacy`, `compact`, `all`; 전환 중 기본값: `legacy`) | 선택 |
 
 ## 라이선스
 

@@ -3,6 +3,7 @@ package com.bifos.dooray.mcp.tools
 import com.bifos.dooray.mcp.client.DoorayClient
 import com.bifos.dooray.mcp.exception.ToolException
 import com.bifos.dooray.mcp.types.*
+import com.bifos.dooray.mcp.types.ToolEffect
 import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
@@ -50,7 +51,7 @@ fun updateWikiPageTool(): Tool {
 
 fun updateWikiPageHandler(doorayClient: DoorayClient): suspend (ClientConnection, CallToolRequest) -> CallToolResult {
     return { _, request ->
-        toolHandler {
+        toolHandler(ToolEffect.WRITE) {
             val wikiId = request.requireParam(
                 "wiki_id", "MISSING_WIKI_ID",
                 "wiki_id 파라미터가 필요합니다. dooray_wiki_list_projects를 사용해서 위키 ID를 먼저 조회하세요."

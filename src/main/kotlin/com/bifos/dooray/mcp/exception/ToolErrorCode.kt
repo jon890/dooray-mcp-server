@@ -1,0 +1,26 @@
+package com.bifos.dooray.mcp.exception
+
+enum class ToolErrorCode(val retryableByDefault: Boolean) {
+    INVALID_ARGUMENT(false),
+    PARAMETER_MISSING(false),
+    MUTUALLY_EXCLUSIVE_INPUT(false),
+    CONFIG_REQUIRED(false),
+    AUTH_FAILED(false),
+    PERMISSION_DENIED(false),
+    ADMIN_DISABLED(false),
+    TARGET_NOT_FOUND(false),
+    AMBIGUOUS_TARGET(false),
+    AMBIGUOUS_REFERENCE(false),
+    CONFIRMATION_REQUIRED(false),
+    CONFIRMATION_EXPIRED(false),
+    CONFIRMATION_TARGET_CHANGED(false),
+    IDEMPOTENCY_KEY_REUSED(false),
+    OUTCOME_UNKNOWN(false),
+    LOCAL_PATH_FORBIDDEN(false),
+    OUTPUT_EXISTS(false),
+    RESOURCE_UNREADABLE(false),
+    UPSTREAM_ERROR(false),
+    RATE_LIMITED(true),
+    TIMEOUT(true),
+    INTERNAL_ERROR(false),
+}

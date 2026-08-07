@@ -3,7 +3,9 @@
 작성 기준일은 2026-08-06이다.
 
 이 문서는 설정, 상태 파일, 공통 입력, 공통 결과의 논리 스키마를 정의한다.
-실제 JSON Schema 파일은 후속 구현 계획에서 코드와 함께 추가한다.
+공통 실행 계약의 실제 JSON Schema는
+`src/main/resources/schema/execution-contract.schema.json`에 있다.
+Kotlin 타입과 이 스키마의 결과 모드, 본문 입력, 성공·오류 필드는 계약 시험으로 함께 고정한다.
 
 ## 설정
 
@@ -41,13 +43,14 @@
   leases/v1/records/<leaseId>.json
   leases/v1/blobs/<leaseId>.blob
   cache/v1/<namespace>/<keyHash>.json
-  locks/<kind>/<keyHash>.lck
+  locks/<kind>/<stripe>.lck
   quarantine/
 ```
 
 상태 파일은 `0600`, 상태 디렉터리는 가능한 경우 `0700`으로 만든다.
 JSON 기록은 임시 파일에 쓴 뒤 같은 파일시스템에서 원자적으로 교체한다.
 손상된 기록은 삭제하지 않고 `quarantine/`으로 옮긴다.
+잠금 파일은 요청마다 만들지 않고 종류별 최대 4,096개 스트라이프를 재사용한다.
 
 ## 비밀 없는 설정 파일
 
@@ -220,8 +223,8 @@ JSON 기록은 임시 파일에 쓴 뒤 같은 파일시스템에서 원자적�
   "targetSnapshotFingerprint": "base64url-sha256",
   "principalFingerprint": "base64url-hmac",
   "serverInstanceId": "uuid",
-  "expiresAt": "2026-08-06T12:05:00Z",
-  "consumedAt": null
+  "expiresAtEpochMillis": 1785995100000,
+  "consumedAtEpochMillis": null
 }
 ```
 
@@ -238,10 +241,19 @@ JSON 기록은 임시 파일에 쓴 뒤 같은 파일시스템에서 원자적�
   "principalFingerprint": "base64url-hmac",
   "status": "SUCCESS",
   "resultFingerprint": "base64url-sha256",
-  "createdAt": "2026-08-06T12:00:00Z",
-  "expiresAt": "2026-08-09T12:00:00Z"
+  "ids": [
+    { "kind": "post", "id": "1234567890123456789" }
+  ],
+  "createdAtEpochMillis": 1785994800000,
+  "expiresAtEpochMillis": 1786254000000
 }
 ```
 
 `status`는 `IN_PROGRESS`, `SUCCESS`, `PARTIAL_SUCCESS`, `OUTCOME_UNKNOWN`, `FAILED_BEFORE_EFFECT` 중 하나다.
 쓰기 요청의 응답을 확인하지 못하면 `OUTCOME_UNKNOWN`으로 남긴다.
+상태 파일의 시각은 JVM과 플랫폼 사이에서 손실 없이 비교하기 위해 UTC epoch millisecond로 저장한다.
+외부 도구 결과에서 만료 시각을 보여줄 때는 ISO 8601 UTC 문자열로 변환한다.
+
+파일 저장소를 실제 도구에 배선하는 도메인 계획은 서버 기동 시 한 번,
+이후 정기적으로 `purgeExpired()`를 호출하는 수명 주기 책임도 함께 등록한다.
+plan003은 저장소 계약과 구현만 제공하므로 아직 이 정리 작업을 시작하지 않는다.
