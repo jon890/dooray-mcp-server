@@ -29,6 +29,11 @@ class DockerfileContractTest {
     }
 
     @Test
+    fun `시험 배포 버전은 prerelease 태그다`() {
+        assertContains(VersionConst.VERSION, "-")
+    }
+
+    @Test
     fun `런타임 이미지는 시험 태그와 무관하게 shadowJar 산출물을 복사한다`() {
         assertContains(
             dockerfile,

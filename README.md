@@ -56,19 +56,19 @@ export DOORAY_PROJECT_CACHE_TTL_MINUTES=5
 ./gradlew runLocal
 
 # 또는 직접 실행
-java -jar build/libs/dooray-mcp-server-0.4.1-all.jar
+java -jar build/libs/dooray-mcp-server-0.5.0-alpha.1-all.jar
 ```
 
 ### Docker 실행
 
 ```bash
-# Docker Hub에서 이미지 가져오기
-docker pull bifos/dooray-mcp:latest
+# 시험 태그 이미지 가져오기
+docker pull bifos/dooray-mcp:0.5.0-alpha.1
 
 # 환경변수와 함께 실행
 docker run -e DOORAY_API_KEY="your_api_key" \
            -e DOORAY_BASE_URL="https://api.dooray.com" \
-           bifos/dooray-mcp:latest
+           bifos/dooray-mcp:0.5.0-alpha.1
 ```
 
 ## 사용 가능한 도구 (총 20개)
@@ -225,7 +225,7 @@ CI=true ./gradlew test
 ./gradlew clean shadowJar
 
 # Docker 이미지 빌드
-docker build -t dooray-mcp:local --build-arg VERSION=0.4.1 .
+docker build -t dooray-mcp:local --build-arg VERSION=0.5.0-alpha.1 .
 ```
 
 ## 환경변수

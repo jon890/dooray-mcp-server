@@ -17,7 +17,25 @@ cd "$(dirname "$0")/.."
 IMAGE_NAME="bifos/dooray-mcp"
 # Gradle에서 버전 추출
 VERSION=$(./gradlew properties --no-daemon --console=plain -q | grep "^version:" | awk '{print $2}')
-LATEST_TAG="latest"
+PUSH_LATEST="false"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --push-latest)
+            PUSH_LATEST="true"
+            shift
+            ;;
+        *)
+            echo -e "${RED}알 수 없는 옵션: $1${NC}"
+            exit 1
+            ;;
+    esac
+done
+
+if [[ "${PUSH_LATEST}" == "true" && "${VERSION}" == *-* ]]; then
+    echo -e "${RED}prerelease 버전에는 latest 태그를 푸시할 수 없습니다: ${VERSION}${NC}"
+    exit 1
+fi
 
 echo -e "${BLUE}🚀 Docker Hub에 이미지 푸시 시작${NC}"
 echo -e "${YELLOW}📦 이미지: ${IMAGE_NAME}${NC}"
@@ -34,7 +52,7 @@ fi
 # 이미지 존재 확인
 if ! docker images "${IMAGE_NAME}:${VERSION}" --format "{{.Repository}}" | grep -q "${IMAGE_NAME}"; then
     echo -e "${RED}❌ 이미지 ${IMAGE_NAME}:${VERSION}가 존재하지 않습니다.${NC}"
-    echo -e "${YELLOW}💡 먼저 빌드를 실행하세요: ./docker-build.sh${NC}"
+    echo -e "${YELLOW}💡 먼저 빌드를 실행하세요: ./scripts/docker-build.sh${NC}"
     exit 1
 fi
 
@@ -49,25 +67,22 @@ else
     exit 1
 fi
 
-# latest 태그 푸시
-echo -e "\n${BLUE}📤 latest 태그 푸시 중...${NC}"
-docker push "${IMAGE_NAME}:${LATEST_TAG}"
+if [[ "${PUSH_LATEST}" == "true" ]]; then
+    # latest 태그 푸시
+    echo -e "\n${BLUE}📤 latest 태그 푸시 중...${NC}"
+    docker push "${IMAGE_NAME}:latest"
 
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ latest 태그 푸시 완료!${NC}"
-else
-    echo -e "${RED}❌ latest 태그 푸시 실패!${NC}"
-    exit 1
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ latest 태그 푸시 완료!${NC}"
+    else
+        echo -e "${RED}❌ latest 태그 푸시 실패!${NC}"
+        exit 1
+    fi
 fi
 
-echo -e "\n${GREEN}🎉 모든 이미지 푸시 완료!${NC}"
+echo -e "\n${GREEN}🎉 요청한 이미지 푸시 완료!${NC}"
 echo -e "${GREEN}🌐 Docker Hub에서 확인: https://hub.docker.com/r/${IMAGE_NAME}${NC}"
 
 echo -e "\n${BLUE}📋 사용 방법:${NC}"
-echo -e "  # 최신 버전 사용"
-echo -e "  docker pull ${IMAGE_NAME}:latest"
-echo -e "  docker run -e DOORAY_API_KEY=your_api_key ${IMAGE_NAME}:latest"
-echo -e ""
-echo -e "  # 특정 버전 사용"
 echo -e "  docker pull ${IMAGE_NAME}:${VERSION}"
-echo -e "  docker run -e DOORAY_API_KEY=your_api_key ${IMAGE_NAME}:${VERSION}" 
+echo -e "  docker run -e DOORAY_API_KEY=your_api_key ${IMAGE_NAME}:${VERSION}"

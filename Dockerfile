@@ -25,7 +25,7 @@ RUN ./gradlew clean shadowJar --no-daemon
 FROM eclipse-temurin:21-jre-alpine
 
 # 버전을 빌드 인수로 받기
-ARG VERSION=0.4.1
+ARG VERSION=0.5.0-alpha.1
 ENV APP_VERSION=${VERSION}
 
 # 메타데이터 라벨

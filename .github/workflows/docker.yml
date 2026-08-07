@@ -71,23 +71,9 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_VERSION: ${{ github.event.inputs.version }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-          SHOULD_PUSH: ${{ github.event_name == 'release' || github.event.inputs.push == 'true' }}
-        run: |
-          PROJECT_VERSION=$(grep 'project.version=' gradle.properties | cut -d'=' -f2)
-          if [ -n "${INPUT_VERSION}" ]; then
-            VERSION="${INPUT_VERSION}"
-          elif [ "${EVENT_NAME}" = "release" ]; then
-            VERSION="${RELEASE_TAG}"
-            VERSION="${VERSION#v}"
-          else
-            VERSION="${PROJECT_VERSION}"
-          fi
-          if [ "${SHOULD_PUSH}" = "true" ] && [ "${VERSION}" != "${PROJECT_VERSION}" ]; then
-            echo "게시 버전 ${VERSION}이 project.version ${PROJECT_VERSION}과 일치하지 않습니다." >&2
-            exit 1
-          fi
-          echo "VERSION=${VERSION}" >> "${GITHUB_OUTPUT}"
-          echo "Build version: ${VERSION}"
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+          PUSH_REQUESTED: ${{ github.event_name == 'release' || github.event.inputs.push == 'true' }}
+        run: scripts/docker-tag-policy.sh
 
       - name: Log in to Docker Hub
         if: ${{ github.event_name == 'release' || github.event.inputs.push == 'true' }}
@@ -109,7 +95,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=${{ steps.version.outputs.VERSION }}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.push == 'true') }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.PUSH_LATEST == 'true' }}
 
       - name: Build and push Docker image (Multi-platform)
         id: push

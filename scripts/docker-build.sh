@@ -17,7 +17,25 @@ cd "$(dirname "$0")/.."
 IMAGE_NAME="bifos/dooray-mcp"
 # Gradle에서 버전 추출
 VERSION=$(./gradlew properties --no-daemon --console=plain -q | grep "^version:" | awk '{print $2}')
-LATEST_TAG="latest"
+TAG_LATEST="false"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --tag-latest)
+            TAG_LATEST="true"
+            shift
+            ;;
+        *)
+            echo -e "${RED}알 수 없는 옵션: $1${NC}"
+            exit 1
+            ;;
+    esac
+done
+
+if [[ "${TAG_LATEST}" == "true" && "${VERSION}" == *-* ]]; then
+    echo -e "${RED}prerelease 버전에는 latest 태그를 만들 수 없습니다: ${VERSION}${NC}"
+    exit 1
+fi
 
 echo -e "${BLUE}🐳 Dooray MCP Server Docker 빌드 시작${NC}"
 echo -e "${YELLOW}📦 이미지: ${IMAGE_NAME}${NC}"
@@ -28,14 +46,19 @@ echo -e "\n${BLUE}🔨 Docker 이미지 빌드 중...${NC}"
 docker build \
   --build-arg VERSION="${VERSION}" \
   -t "${IMAGE_NAME}:${VERSION}" \
-  -t "${IMAGE_NAME}:${LATEST_TAG}" \
   .
+
+if [[ "${TAG_LATEST}" == "true" ]]; then
+    docker tag "${IMAGE_NAME}:${VERSION}" "${IMAGE_NAME}:latest"
+fi
 
 if [ $? -eq 0 ]; then
     echo -e "\n${GREEN}✅ 빌드 완료!${NC}"
     echo -e "${GREEN}📦 생성된 이미지:${NC}"
     echo -e "  - ${IMAGE_NAME}:${VERSION}"
-    echo -e "  - ${IMAGE_NAME}:${LATEST_TAG}"
+    if [[ "${TAG_LATEST}" == "true" ]]; then
+        echo -e "  - ${IMAGE_NAME}:latest"
+    fi
     
     # 이미지 크기 확인
     echo -e "\n${BLUE}📊 이미지 정보:${NC}"
@@ -53,4 +76,4 @@ if [ $? -eq 0 ]; then
 else
     echo -e "\n${RED}❌ 빌드 실패!${NC}"
     exit 1
-fi 
+fi

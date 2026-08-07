@@ -106,16 +106,10 @@ jobs:
       - name: Extract version from gradle.properties
         id: version
         env:
+          EVENT_NAME: ${{ github.event_name }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          VERSION=$(grep 'project.version=' gradle.properties | cut -d'=' -f2)
-          TAG_VERSION="${RELEASE_TAG#v}"
-          if [ "${TAG_VERSION}" != "${VERSION}" ]; then
-            echo "Git 태그 버전 ${TAG_VERSION}이 project.version ${VERSION}과 일치하지 않습니다." >&2
-            exit 1
-          fi
-          echo "VERSION=${VERSION}" >> "${GITHUB_OUTPUT}"
-          echo "Extracted version: ${VERSION}"
+          PUSH_REQUESTED: "true"
+        run: scripts/docker-tag-policy.sh
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v4
@@ -135,7 +129,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ steps.version.outputs.PUSH_LATEST == 'true' }}
             type=semver,pattern={{version}}
 
       - name: Build and push Docker image (Multi-platform)
