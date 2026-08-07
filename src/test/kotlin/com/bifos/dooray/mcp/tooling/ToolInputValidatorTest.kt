@@ -6,7 +6,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
 class ToolInputValidatorTest {
@@ -17,6 +20,12 @@ class ToolInputValidatorTest {
                 put("type", "integer")
                 put("minimum", 1)
                 put("maximum", 10)
+            }
+            putJsonObject("optional") {
+                putJsonArray("type") {
+                    add(JsonPrimitive("string"))
+                    add(JsonPrimitive("null"))
+                }
             }
         },
         required = listOf("name"),
@@ -66,6 +75,25 @@ class ToolInputValidatorTest {
                 put("name", "ok")
                 put("count", 2)
             },
+        )
+        ToolInputValidator.validate(
+            schema,
+            buildJsonObject {
+                put("name", "ok")
+                put("optional", JsonNull)
+            },
+        )
+        assertEquals(
+            "INVALID_PARAMETER_TYPE",
+            assertFailsWith<ToolException> {
+                ToolInputValidator.validate(
+                    schema,
+                    buildJsonObject {
+                        put("name", "ok")
+                        putJsonObject("optional") { put("unexpected", true) }
+                    },
+                )
+            }.stableCode,
         )
     }
 }

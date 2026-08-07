@@ -16,7 +16,10 @@ class StdioHygieneContractTest {
                 .filter { it.fileName.toString() != "Main.kt" }
                 .filter { path ->
                     val source = Files.readString(path)
-                    source.contains("System.out") || source.contains("println(")
+                    source.contains("System.out") ||
+                        source.contains("System.console()") ||
+                        source.contains("println(") ||
+                        source.contains("print(")
                 }
                 .toList()
         }

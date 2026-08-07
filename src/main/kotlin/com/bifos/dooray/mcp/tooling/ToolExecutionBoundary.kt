@@ -20,7 +20,6 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
@@ -46,29 +45,41 @@ class ToolExecutionBoundary(
         principalFingerprint: String? = null,
         block: suspend (RequestContext) -> ToolExecutionSuccess,
     ): CallToolResult {
-        val rawRequestId = requestId ?: arguments["request_id"]?.jsonPrimitive?.contentOrNull
-        val resolvedRequestId = rawRequestId ?: idFactory()
-        val context = RequestContext(
+        var context = RequestContext(
             operation = operation,
-            requestId = resolvedRequestId,
+            requestId = idFactory(),
             correlationId = idFactory(),
             resultMode = resultMode ?: ResultMode.COMPACT,
             dryRun = dryRun ?: false,
             arguments = arguments,
-            deadlineEpochMillis = Math.addExact(clock(), timeoutMillis),
             principalFingerprint = principalFingerprint,
         )
 
         return try {
+            val rawRequestId = requestId ?: parseOptionalString(
+                arguments = arguments,
+                name = "request_id",
+                code = "INVALID_REQUEST_ID",
+                message = "request_id는 UUID 문자열 형식이어야 합니다.",
+            )
             rawRequestId?.let(::validateRequestId)
-            val resolvedContext = context.copy(
+            context = context.copy(
+                requestId = rawRequestId ?: context.requestId,
                 resultMode = resultMode
-                    ?: ResultMode.parse(arguments["result_mode"]?.jsonPrimitive?.contentOrNull),
+                    ?: ResultMode.parse(
+                        parseOptionalString(
+                            arguments = arguments,
+                            name = "result_mode",
+                            code = "INVALID_RESULT_MODE",
+                            message = "result_mode는 문자열 형식이어야 합니다.",
+                        )
+                    ),
                 dryRun = dryRun ?: parseDryRun(arguments),
+                deadlineEpochMillis = Math.addExact(clock(), timeoutMillis),
             )
             inputSchema?.let { ToolInputValidator.validate(it, arguments) }
-            val success = withTimeout(timeoutMillis) { block(resolvedContext) }
-            successResult(resolvedContext, success)
+            val success = withTimeout(timeoutMillis) { block(context) }
+            successResult(context, success)
         } catch (error: TimeoutCancellationException) {
             errorResult(
                 context,
@@ -132,7 +143,6 @@ class ToolExecutionBoundary(
                 put("type", error.type)
                 put("code", error.stableCode)
                 put("details", kotlinx.serialization.json.JsonNull)
-                put("retryable", error.retryable)
             }
             putJsonObject("content") {
                 put("type", "text")
@@ -256,11 +266,26 @@ class ToolExecutionBoundary(
 
     private fun parseDryRun(arguments: JsonObject): Boolean {
         val value = arguments["dry_run"] ?: return false
-        return value.jsonPrimitive.booleanOrNull
+        val primitive = value as? JsonPrimitive
+        return primitive?.takeUnless(JsonPrimitive::isString)?.booleanOrNull
             ?: throw ToolException.invalidArgument(
                 code = "INVALID_DRY_RUN",
                 message = "dry_run은 boolean 형식이어야 합니다."
             )
+    }
+
+    private fun parseOptionalString(
+        arguments: JsonObject,
+        name: String,
+        code: String,
+        message: String,
+    ): String? {
+        val value = arguments[name] ?: return null
+        val primitive = value as? JsonPrimitive
+        if (primitive == null || !primitive.isString) {
+            throw ToolException.invalidArgument(code = code, message = message)
+        }
+        return primitive.contentOrNull
     }
 
     private fun timeoutError(effect: ToolEffect, cause: TimeoutCancellationException): ToolException =

@@ -15,11 +15,13 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 
 class ToolExecutionBoundaryTest {
     @Test
@@ -97,6 +99,30 @@ class ToolExecutionBoundaryTest {
     }
 
     @Test
+    fun `공통 메타 입력의 객체 값은 구조화된 입력 오류로 거부한다`() = runTest {
+        val cases = listOf(
+            "request_id" to "INVALID_REQUEST_ID",
+            "result_mode" to "INVALID_RESULT_MODE",
+            "dry_run" to "INVALID_DRY_RUN",
+        )
+
+        cases.forEach { (name, expectedCode) ->
+            val result = ToolExecutionBoundary(idFactory = { "generated-id" }).execute(
+                operation = "create",
+                arguments = buildJsonObject {
+                    putJsonObject(name) { put("unexpected", true) }
+                },
+            ) { ToolExecutionSuccess("실행되면 안 됩니다.") }
+
+            assertEquals(true, result.isError)
+            assertEquals(
+                expectedCode,
+                result.structuredContent!!["error"]!!.jsonObject["code"]!!.jsonPrimitive.content,
+            )
+        }
+    }
+
+    @Test
     fun `도구 오류는 isError와 안정 코드를 반환한다`() = runTest {
         val boundary = ToolExecutionBoundary(idFactory = { "id" })
         val result = boundary.execute(operation = "create") {
@@ -107,6 +133,18 @@ class ToolExecutionBoundaryTest {
         val error = assertNotNull(result.structuredContent)["error"]!!.jsonObject
         assertEquals("INVALID_TITLE", error["code"]!!.jsonPrimitive.content)
         assertFalse(error["retryable"]!!.jsonPrimitive.boolean)
+    }
+
+    @Test
+    fun `legacy 오류 텍스트는 기존 필드 집합을 유지한다`() {
+        val result = ToolExecutionBoundary(idFactory = { "id" }).legacyErrorResult(
+            ToolException.invalidArgument("INVALID_TITLE", "제목이 필요합니다."),
+        )
+        val text = (result.content.single() as TextContent).text
+        val compatibility = Json.parseToJsonElement(text).jsonObject
+
+        assertEquals(setOf("isError", "error", "content"), compatibility.keys)
+        assertEquals(setOf("type", "code", "details"), compatibility["error"]!!.jsonObject.keys)
     }
 
     @Test
