@@ -10,9 +10,12 @@ import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Tag
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -117,7 +120,7 @@ class McpServerIntegrationTest {
     fun `all expected tools should be registered`(): Unit = runBlocking {
         val toolNames = client.listTools().tools.map { it.name }
         assertTrue(
-            toolNames.toSet() == EXPECTED_TOOLS.toSet(),
+            toolNames == EXPECTED_TOOLS,
             "등록된 도구 목록이 스냅숏과 다릅니다. expected=$EXPECTED_TOOLS, actual=$toolNames"
         )
         EXPECTED_TOOLS.forEach { expected ->
@@ -152,6 +155,25 @@ class McpServerIntegrationTest {
         val tools = client.listTools().tools
         tools.forEach { tool ->
             assertNotNull(tool.inputSchema, "도구 '${tool.name}'에 inputSchema가 없습니다")
+            val properties = assertNotNull(
+                tool.inputSchema.properties,
+                "도구 '${tool.name}'의 properties가 없습니다",
+            )
+            assertTrue(properties.isNotEmpty(), "도구 '${tool.name}'의 properties가 비어 있습니다")
+            tool.inputSchema.required.orEmpty().forEach { required ->
+                assertTrue(
+                    required in properties,
+                    "도구 '${tool.name}'의 required '$required'가 properties에 없습니다",
+                )
+            }
+            properties.forEach { (name, schema) ->
+                val property = schema as? JsonObject
+                assertNotNull(property, "도구 '${tool.name}'의 '$name' 스키마가 객체가 아닙니다")
+                assertTrue(
+                    property["type"] is JsonPrimitive,
+                    "도구 '${tool.name}'의 '$name'에 type이 없습니다",
+                )
+            }
         }
     }
 
@@ -203,6 +225,13 @@ class McpServerIntegrationTest {
         val text = (content as? io.modelcontextprotocol.kotlin.sdk.types.TextContent)?.text
         assertNotNull(text, "응답이 TextContent가 아닙니다")
         assertFalse(text.isBlank(), "에러 응답 텍스트가 비어있습니다")
+        assertTrue(result.isError == true, "오류 응답의 MCP isError가 true가 아닙니다")
+        val structured = assertNotNull(result.structuredContent, "오류 structuredContent가 없습니다")
+        assertFalse(structured.toString().contains("at com.bifos"), "스택 추적이 응답에 노출됐습니다")
+        assertEquals(
+            "MISSING_PROJECT_ID",
+            structured["error"]!!.jsonObject["code"]!!.jsonPrimitive.content,
+        )
     }
 
     @Test
