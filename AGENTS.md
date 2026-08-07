@@ -26,6 +26,21 @@
 
 4. 구현 전에 관련 작업 명세를 `tasks/<plan>/`에서 확인한다.
 
+## 지침 단일 원본과 에이전트 하네스
+
+- 저장소의 공통 에이전트 지침은 `AGENTS.md` 하나만 원본으로 관리한다.
+- `CLAUDE.md`는 `AGENTS.md`를 가리키는 상대 심볼릭 링크로 유지한다.
+- 공통 규칙을 바꿀 때는 `AGENTS.md`만 수정하고 `CLAUDE.md`에 별도 내용을 만들지 않는다.
+- Claude 전용 명령과 역할별 보조 지침은 다음 경로에 둔다.
+
+  - `.claude/commands/`
+  - `.claude/planning-overlay.md`
+  - `.claude/build-with-teams-overlay.md`
+  - `.claude/agents/dooray-mcp-docs-verifier.md`
+
+- 다른 코딩 에이전트가 `AGENTS.md`를 직접 읽거나 `CLAUDE.md`를 자동으로 읽어도 같은 공통 계약을 적용해야 한다.
+- 에이전트별 보조 지침은 공통 계약을 반복하지 않고 해당 실행 환경에만 필요한 차이만 기록한다.
+
 ## 독립 구현 경계
 
 MCP 서버는 `dooray-cli`의 동작을 참고하되 코드와 실행 환경에서 완전히 독립적이어야 한다.
