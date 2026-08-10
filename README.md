@@ -1,254 +1,110 @@
 # Dooray MCP Server
 
-NHN Dooray 서비스의 MCP(Model Context Protocol) 서버입니다.
+> [!IMPORTANT]
+> 이 저장소는 유지보수를 종료했으며 보관 상태로 전환되었습니다.
+> 새로운 기능, 오류 수정, 보안 갱신, 새 Docker 이미지 배포는 제공하지 않습니다.
+> Dooray 자동화에는 [dooray-cli](https://github.com/jon890/dooray-cli)를 사용해 주세요.
 
-## 주요 기능
+## 대체 프로젝트
 
-- **위키 관리**: 위키 조회, 생성, 수정, 댓글 조회
-- **업무 관리**: 업무 조회, 생성, 수정, 상태 변경
-- **댓글 관리**: 업무 댓글 생성, 조회, 수정, 삭제
-- **프로젝트 코드 자동 매핑**: 프로젝트 이름(코드)을 입력하면 내부적으로 ID를 자동 resolve (캐시 기반)
-- **JSON 응답**: 규격화된 JSON 형태의 응답
-- **예외 처리**: 일관된 에러 응답 제공
-- **Docker 지원**: AMD64 / ARM64 멀티 플랫폼 Docker 이미지 제공
+`dooray-cli`는 Dooray 업무, 댓글, 위키, 메일, 메신저를 터미널과 AI 에이전트에서 사용할 수 있게 제공합니다.
+보관 전환일인 2026년 8월 10일 기준 최신 버전은 `v0.16.0`입니다.
 
-## 빠른 시작
-
-### 환경변수 설정
-
-다음 환경변수를 설정해야 합니다:
+Node.js 20 이상에서 다음과 같이 설치합니다.
 
 ```bash
-export DOORAY_API_KEY="your_api_key"
-export DOORAY_BASE_URL="https://api.dooray.com"
-
-# 선택사항: 로깅 레벨 제어
-export DOORAY_LOG_LEVEL="WARN"              # DEBUG, INFO, WARN, ERROR (기본값: WARN)
-export DOORAY_HTTP_LOG_LEVEL="WARN"         # HTTP 클라이언트 로깅 (기본값: WARN)
-
-# 선택사항: 프로젝트 캐시 TTL (분 단위, 기본값: 5)
-export DOORAY_PROJECT_CACHE_TTL_MINUTES=5
+npm install -g @bifos/dooray-cli
+dooray setup
+dooray doctor
 ```
 
-#### 로깅 설정
+`dooray setup`은 Dooray API 주소와 인증 정보를 대화형으로 설정합니다.
+인증 정보는 명령 인자나 공개 저장소에 기록하지 마세요.
 
-**일반 로깅 (`DOORAY_LOG_LEVEL`)**
+## AI 에이전트에서 사용하기
 
-- `WARN` (기본값): 경고 및 에러만 로깅 - **MCP 통신 안정성을 위해 권장**
-- `INFO`: 일반 정보 포함 로깅
-- `DEBUG`: 상세한 디버그 정보 포함
-
-**HTTP 로깅 (`DOORAY_HTTP_LOG_LEVEL`)**
-
-- `WARN` (기본값): HTTP 에러만 로깅 - **MCP 통신 안정성을 위해 권장**
-- `INFO`: 기본 요청/응답 정보만 로깅
-- `DEBUG`: 상세한 HTTP 정보 로깅
-
-> ⚠️ **중요**: MCP 서버는 stdin/stdout을 통해 통신하므로, 모든 로그는 **stderr**로 출력됩니다. 로깅 레벨을 높이면 프로토콜 통신에는 영향을 주지 않지만, 성능에 영향을 줄 수 있습니다.
-
-### 로컬 실행
+CLI와 함께 제공되는 Claude Code 스킬을 설치하면 자연어 요청을 `dooray` 명령으로 처리할 수 있습니다.
+다른 코딩 에이전트에서는 해당 에이전트의 지침 기능이나 명령 실행 기능을 통해 CLI를 사용할 수 있습니다.
 
 ```bash
-# 의존성 설치 및 빌드
-./gradlew clean shadowJar
-
-# 로컬 실행 (.env 파일 사용)
-./gradlew runLocal
-
-# 또는 직접 실행
-java -jar build/libs/dooray-mcp-server-0.4.1-all.jar
+dooray skill install
+dooray skill status
 ```
 
-### Docker 실행
+CLI를 갱신한 뒤에는 스킬도 함께 갱신합니다.
 
 ```bash
-# Docker Hub에서 이미지 가져오기
-docker pull bifos/dooray-mcp:latest
-
-# 환경변수와 함께 실행
-docker run -e DOORAY_API_KEY="your_api_key" \
-           -e DOORAY_BASE_URL="https://api.dooray.com" \
-           bifos/dooray-mcp:latest
+npm install -g @bifos/dooray-cli@latest
+dooray skill update
+dooray doctor
 ```
 
-## 사용 가능한 도구 (총 20개)
+설치가 끝나면 에이전트에게 다음과 같이 요청할 수 있습니다.
 
-### 위키 관련 도구 (6개)
-
-#### 1. dooray_wiki_list_projects
-
-두레이에서 접근 가능한 위키 프로젝트 목록을 조회합니다.
-
-#### 2. dooray_wiki_list_pages
-
-특정 두레이 위키 프로젝트의 페이지 목록을 조회합니다.
-
-#### 3. dooray_wiki_get_page
-
-특정 두레이 위키 페이지의 상세 정보를 조회합니다.
-
-#### 4. dooray_wiki_create_page
-
-새로운 위키 페이지를 생성합니다.
-
-#### 5. dooray_wiki_update_page
-
-기존 위키 페이지를 수정합니다.
-
-#### 6. dooray_wiki_get_page_comments
-
-특정 위키 페이지의 댓글 목록을 조회합니다. (최신순, 페이징 지원)
-
-### 프로젝트 관련 도구 (2개)
-
-#### 7. dooray_project_list_projects
-
-접근 가능한 프로젝트 목록을 조회합니다.
-
-#### 8. dooray_project_list_members
-
-프로젝트 멤버 목록을 조회합니다. 업무 담당자/참조자 지정 시 사용합니다.
-
-### 업무 관련 도구 (8개)
-
-> 💡 `project_id` 파라미터에 프로젝트 ID 또는 **프로젝트 코드(이름)**를 입력할 수 있습니다. 서버가 내부적으로 자동으로 ID를 resolve합니다.
-
-#### 9. dooray_project_list_posts
-
-프로젝트의 업무 목록을 조회합니다.
-
-#### 10. dooray_project_get_post
-
-특정 업무의 상세 정보를 조회합니다.
-
-#### 11. dooray_project_create_post
-
-새로운 업무를 생성합니다.
-
-#### 12. dooray_project_update_post
-
-기존 업무를 수정합니다.
-
-#### 13. dooray_project_set_post_workflow
-
-업무의 상태(워크플로우)를 변경합니다.
-
-#### 14. dooray_project_set_post_done
-
-업무를 완료 상태로 변경합니다.
-
-#### 15. dooray_project_set_post_parent
-
-업무의 상위 업무를 설정합니다.
-
-#### 16. dooray_project_list_workflows
-
-프로젝트의 워크플로우(업무 상태) 목록을 조회합니다.
-
-### 업무 댓글 관련 도구 (4개)
-
-#### 17. dooray_project_create_post_comment
-
-업무에 댓글을 생성합니다.
-
-#### 18. dooray_project_get_post_comments
-
-업무의 댓글 목록을 조회합니다.
-
-#### 19. dooray_project_update_post_comment
-
-업무 댓글을 수정합니다.
-
-#### 20. dooray_project_delete_post_comment
-
-업무 댓글을 삭제합니다.
-
-## 사용 예시
-
-### 위키 프로젝트 목록 조회
-
-```json
-{
-  "name": "dooray_wiki_list_projects",
-  "arguments": {
-    "page": 0,
-    "size": 20
-  }
-}
+```text
+내 프로젝트 목록을 보여줘.
+백엔드 프로젝트에 업무를 만들고 담당자를 지정해줘.
+42번 업무에 진행 상황 댓글을 추가해줘.
+이번 주 회의록 위키 페이지를 만들어줘.
+안 읽은 메일을 보여줘.
+개발팀 대화방에 배포 완료 메시지를 보내줘.
 ```
 
-### 업무 생성 (프로젝트 코드 또는 ID 사용 가능)
-
-```json
-{
-  "name": "dooray_project_create_post",
-  "arguments": {
-    "project_id": "my-project",
-    "subject": "새로운 업무",
-    "body": "업무 내용",
-    "to_member_ids": ["member_id_1", "member_id_2"],
-    "priority": "high"
-  }
-}
-```
-
-### 댓글 생성
-
-```json
-{
-  "name": "dooray_project_create_post_comment",
-  "arguments": {
-    "project_id": "my-project",
-    "post_id": "your_post_id",
-    "content": "댓글 내용",
-    "mime_type": "text/x-markdown"
-  }
-}
-```
-
-## 개발
-
-### 테스트 실행
+## 터미널에서 직접 사용하기
 
 ```bash
-# 모든 테스트 실행
-./gradlew test
-
-# CI 환경 (통합 테스트 자동 제외)
-CI=true ./gradlew test
+dooray project list
+dooray post list <project>
+dooray post get <project> 42
+dooray post create <project> --title "제목"
+dooray post comment add <project> 42 --body "댓글"
+dooray wiki pages <project>
+dooray mail list --unread
 ```
 
-### 빌드
+전체 명령과 옵션은 각 단계의 도움말에서 확인합니다.
 
 ```bash
-# JAR 빌드
-./gradlew clean shadowJar
-
-# Docker 이미지 빌드
-docker build -t dooray-mcp:local --build-arg VERSION=0.4.1 .
+dooray --help
+dooray post --help
+dooray post create --help
 ```
 
-## 환경변수
+자동화에서는 구조화된 결과를 위한 `--json`이나 식별자만 반환하는 `--quiet`를 사용할 수 있습니다.
 
-| 변수명                           | 설명                               | 필수 여부      |
-| -------------------------------- | ---------------------------------- | -------------- |
-| `DOORAY_API_KEY`                 | Dooray API 키                      | 필수           |
-| `DOORAY_BASE_URL`                | Dooray API Base URL                | 필수           |
-| `DOORAY_LOG_LEVEL`               | 일반 로깅 레벨 (기본값: WARN)      | 선택           |
-| `DOORAY_HTTP_LOG_LEVEL`          | HTTP 클라이언트 로깅 레벨 (기본값: WARN) | 선택      |
-| `DOORAY_PROJECT_CACHE_TTL_MINUTES` | 프로젝트 캐시 TTL (분, 기본값: 5) | 선택          |
-| `DOORAY_MCP_TOOL_PROFILE`        | 도구 노출 프로필 (`legacy`, `compact`, `all`; 전환 중 기본값: `legacy`) | 선택 |
+```bash
+dooray project list --json
+POST_ID=$(dooray post create <project> --title "배포" --quiet)
+dooray post comment add --id "$POST_ID" --body "시작합니다"
+```
 
-## 라이선스
+더 자세한 설치법과 전체 기능은 [dooray-cli README](https://github.com/jon890/dooray-cli#readme)를 참고해 주세요.
 
-이 프로젝트는 오픈 소스이며, 자유롭게 사용하실 수 있습니다.
+## 기존 MCP 사용자 안내
 
-## 기여
+`dooray-cli`는 이 서버를 실행하거나 내부 코드를 가져오지 않는 독립 프로젝트입니다.
+MCP 서버의 도구 호출을 그대로 대체하는 호환 계층은 제공하지 않습니다.
 
-프로젝트에 기여하고 싶으시다면 이슈를 등록하거나 풀 리퀘스트를 보내주세요.
+기존 사용자는 다음 순서로 이전할 수 있습니다.
 
-## 참고자료
+1. MCP 클라이언트 설정에서 JAR 실행 명령이나 `bifos/dooray-mcp` Docker 실행 항목을 제거합니다.
+2. `@bifos/dooray-cli`를 설치하고 `dooray setup`을 실행합니다.
+3. AI 에이전트를 사용한다면 `dooray skill install`을 실행합니다.
+4. 기존 자동화는 `dooray --help`와 각 하위 명령의 도움말을 기준으로 CLI 호출로 바꿉니다.
+5. 변경 작업은 먼저 조회 명령으로 대상을 확인합니다.
 
-- [두레이 API](https://helpdesk.dooray.com/share/pages/9wWo-xwiR66BO5LGshgVTg/2939987647631384419)
-- [Kotlin MCP Server 예제](https://github.com/modelcontextprotocol/kotlin-sdk/blob/main/samples/weather-stdio-server/src/main/kotlin/io/modelcontextprotocol/sample/server/McpWeatherServer.kt)
-- [Model Context Protocol](https://modelcontextprotocol.io/introduction)
+## 이전 배포물
+
+Docker Hub의 `bifos/dooray-mcp` 이미지와 기존 GitHub Release는 과거 동작을 재현하기 위해 남겨 둡니다.
+이 배포물에는 새 기능이나 보안 수정이 제공되지 않으므로 신규 도입에는 사용하지 마세요.
+`main` 브랜치에는 `v0.4.1` 이후 병합됐지만 별도 버전으로 배포되지 않은 변경도 포함되어 있습니다.
+
+## 프로젝트 상태
+
+- 최종 MCP 안정 버전: `v0.4.1`
+- 권장 대체 프로젝트: [jon890/dooray-cli](https://github.com/jon890/dooray-cli)
+- 보관 전환일 기준 CLI 버전: `v0.16.0`
+- 유지보수 상태: 종료
+- 저장소 상태: 읽기 전용 보관
+
+소스 코드, 문서, 이슈, 기존 릴리스는 기록 보존을 위해 유지합니다.
